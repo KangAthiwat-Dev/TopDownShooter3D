@@ -24,9 +24,19 @@ public class PlayerTargeting : MonoBehaviour
     private TargetPriority targetPriority =
         TargetPriority.Nearest;
 
+    [Header("Close Threat Override")]
+    [SerializeField, Min(0.1f)]
+    private float closeEnterRange = 1.8f;
+
+    [SerializeField, Min(0.1f)]
+    private float closeExitRange = 2.2f;
+
     [Header("Runtime")]
     [SerializeField]
     private Targetable currentTarget;
+
+    [SerializeField]
+    private bool closeOverrideActive;
 
     private readonly Collider[] overlapResults =
         new Collider[64];
@@ -40,21 +50,26 @@ public class PlayerTargeting : MonoBehaviour
             ? currentTarget.AimPoint
             : null;
 
+    public bool IsCloseTarget =>
+        closeOverrideActive &&
+        currentTarget != null;
+
     public event Action<Targetable> TargetChanged;
 
     private void Update()
     {
         scanTimer -= Time.deltaTime;
 
-        if (!IsValidTarget(currentTarget))
+        if (!IsValidTarget(currentTarget, targetRange))
         {
+            closeOverrideActive = false;
             SetTarget(null);
         }
 
-        if (currentTarget == null && scanTimer <= 0f)
+        if (scanTimer <= 0f)
         {
             scanTimer = scanInterval;
-            FindTarget();
+            RefreshTarget();
         }
 
         if (currentTarget != null)
@@ -62,20 +77,73 @@ public class PlayerTargeting : MonoBehaviour
             Debug.DrawLine(
                 transform.position + Vector3.up,
                 currentTarget.AimPoint.position,
-                Color.cyan
+                closeOverrideActive
+                    ? Color.red
+                    : Color.cyan
             );
         }
     }
 
-    private void FindTarget()
+    private void RefreshTarget()
     {
-        int targetCount = Physics.OverlapSphereNonAlloc(
-            transform.position,
-            targetRange,
-            overlapResults,
-            enemyLayer,
-            QueryTriggerInteraction.Ignore
+        // หากล็อกเป้าหมายประชิดอยู่
+        // ให้คงไว้จนกว่าจะออกจากระยะ Exit
+        if (closeOverrideActive)
+        {
+            if (IsValidTarget(
+                currentTarget,
+                closeExitRange
+            ))
+            {
+                return;
+            }
+
+            closeOverrideActive = false;
+            SetTarget(null);
+        }
+
+        // ศัตรูประชิดมีความสำคัญกว่า
+        // เป้าหมายระยะไกลเสมอ
+        Targetable closeTarget = FindBestTarget(
+            closeEnterRange,
+            TargetPriority.Nearest
         );
+
+        if (closeTarget != null)
+        {
+            closeOverrideActive = true;
+            SetTarget(closeTarget);
+            return;
+        }
+
+        // ถ้ายังมีเป้าหมายระยะไกลที่ใช้ได้
+        // ให้ล็อกตัวเดิมต่อไป
+        if (currentTarget != null)
+        {
+            return;
+        }
+
+        SetTarget(
+            FindBestTarget(
+                targetRange,
+                targetPriority
+            )
+        );
+    }
+
+    private Targetable FindBestTarget(
+        float searchRange,
+        TargetPriority priority
+    )
+    {
+        int targetCount =
+            Physics.OverlapSphereNonAlloc(
+                transform.position,
+                searchRange,
+                overlapResults,
+                enemyLayer,
+                QueryTriggerInteraction.Ignore
+            );
 
         Targetable bestTarget = null;
         float bestDistanceSquared = float.MaxValue;
@@ -87,29 +155,29 @@ public class PlayerTargeting : MonoBehaviour
                 overlapResults[i]
                     .GetComponentInParent<Targetable>();
 
-            if (!IsValidTarget(candidate))
+            if (!IsValidTarget(
+                candidate,
+                searchRange
+            ))
             {
                 continue;
             }
 
-            Vector3 offset =
-                candidate.AimPoint.position -
-                transform.position;
-
-            offset.y = 0f;
-
             float distanceSquared =
-                offset.sqrMagnitude;
+                GetHorizontalDistanceSquared(
+                    candidate
+                );
 
-            bool isBetterTarget =
+            bool isBetter =
                 IsBetterTarget(
                     candidate,
+                    priority,
                     distanceSquared,
                     bestDistanceSquared,
                     lowestHealth
                 );
 
-            if (!isBetterTarget)
+            if (!isBetter)
             {
                 continue;
             }
@@ -120,17 +188,18 @@ public class PlayerTargeting : MonoBehaviour
                 candidate.Health.CurrentHealth;
         }
 
-        SetTarget(bestTarget);
+        return bestTarget;
     }
 
     private bool IsBetterTarget(
         Targetable candidate,
+        TargetPriority priority,
         float candidateDistanceSquared,
         float bestDistanceSquared,
         float lowestHealth
     )
     {
-        if (targetPriority == TargetPriority.Nearest)
+        if (priority == TargetPriority.Nearest)
         {
             return candidateDistanceSquared <
                    bestDistanceSquared;
@@ -144,32 +213,42 @@ public class PlayerTargeting : MonoBehaviour
             return true;
         }
 
-        bool sameHealth =
+        bool hasSameHealth =
             Mathf.Approximately(
                 candidateHealth,
                 lowestHealth
             );
 
-        return sameHealth &&
+        return hasSameHealth &&
                candidateDistanceSquared <
                bestDistanceSquared;
     }
 
-    private bool IsValidTarget(Targetable target)
+    private bool IsValidTarget(
+        Targetable target,
+        float allowedRange
+    )
     {
         if (target == null || !target.IsTargetable)
         {
             return false;
         }
 
+        return GetHorizontalDistanceSquared(target) <=
+               allowedRange * allowedRange;
+    }
+
+    private float GetHorizontalDistanceSquared(
+        Targetable target
+    )
+    {
         Vector3 offset =
             target.AimPoint.position -
             transform.position;
 
         offset.y = 0f;
 
-        return offset.sqrMagnitude <=
-               targetRange * targetRange;
+        return offset.sqrMagnitude;
     }
 
     private void SetTarget(Targetable newTarget)
@@ -185,6 +264,7 @@ public class PlayerTargeting : MonoBehaviour
 
     private void OnDisable()
     {
+        closeOverrideActive = false;
         SetTarget(null);
     }
 
@@ -194,6 +274,12 @@ public class PlayerTargeting : MonoBehaviour
         Gizmos.DrawWireSphere(
             transform.position,
             targetRange
+        );
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(
+            transform.position,
+            closeEnterRange
         );
     }
 }
