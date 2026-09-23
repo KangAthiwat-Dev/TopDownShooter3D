@@ -247,6 +247,9 @@ GameObject:
   - component: {fileID: 281397248}
   - component: {fileID: 281397249}
   - component: {fileID: 281397250}
+  - component: {fileID: 281397251}
+  - component: {fileID: 281397252}
+  - component: {fileID: 281397253}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -341,6 +344,7 @@ Transform:
   m_Children:
   - {fileID: 880178387}
   - {fileID: 1185088175}
+  - {fileID: 1656782561}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &281397248
@@ -377,7 +381,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   targetPriority: 0
+  closeEnterRange: 1.8
+  closeExitRange: 2.2
   currentTarget: {fileID: 0}
+  closeOverrideActive: 0
 --- !u!114 &281397250
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -391,6 +398,56 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerTargetHighlight
   playerTargeting: {fileID: 281397249}
+--- !u!114 &281397251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 281397243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a56c7065e6e5449e4a8690f210edbf2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAttackController
+  attackInterval: 0.35
+  currentMode: 0
+  currentAttackTarget: {fileID: 0}
+--- !u!114 &281397252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 281397243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e024a4b521b194819a047588d437f8f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerRangedWeapon
+  attackController: {fileID: 281397251}
+  projectilePrefab: {fileID: 8761123636601695873, guid: ca1f05fe510b94403a15a938e9cce7dd, type: 3}
+  muzzlePoint: {fileID: 1656782561}
+  damage: 20
+  projectileSpeed: 18
+--- !u!114 &281397253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 281397243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d739cfbf7b08643cb97c24445f194486, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMeleeAttack
+  attackController: {fileID: 0}
+  unarmedDamage: 15
+  hitRange: 2.2
+  windUpTime: 0.1
+  recoveryTime: 0.12
+  attackInProgress: 0
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -870,7 +927,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4501203795085606874, guid: 0cb99e2a5a78047ba905fe0c7f762e8a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -5
+      value: -1.19
       objectReference: {fileID: 0}
     - target: {fileID: 4501203795085606874, guid: 0cb99e2a5a78047ba905fe0c7f762e8a, type: 3}
       propertyPath: m_LocalPosition.y
@@ -878,7 +935,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4501203795085606874, guid: 0cb99e2a5a78047ba905fe0c7f762e8a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -10
+      value: -4.48
       objectReference: {fileID: 0}
     - target: {fileID: 4501203795085606874, guid: 0cb99e2a5a78047ba905fe0c7f762e8a, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1068,6 +1125,37 @@ TrailRenderer:
   m_Autodestruct: 0
   m_Emitting: 0
   m_ApplyActiveColorSpace: 1
+--- !u!1 &1656782560
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1656782561}
+  m_Layer: 0
+  m_Name: MuzzlePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1656782561
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1656782560}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 281397247}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2064047960
 PrefabInstance:
   m_ObjectHideFlags: 0
