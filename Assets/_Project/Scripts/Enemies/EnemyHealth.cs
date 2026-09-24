@@ -3,79 +3,47 @@ using UnityEngine;
 
 public class EnemyHealth : MonoBehaviour, IDamageable
 {
-    [Header("Health")]
-    [SerializeField, Min(1f)] private float maxHealth = 100f;
-    [SerializeField] private bool disableOnDeath = true;
+    [SerializeField] private float maxHealth = 100f;
 
-    public float CurrentHealth { get; private set; }
     public float MaxHealth => maxHealth;
+    public float CurrentHealth { get; private set; }
     public bool IsAlive => CurrentHealth > 0f;
 
     public event Action<float, float> HealthChanged;
     public event Action Died;
+
+    private bool deathInvoked;
 
     private void Awake()
     {
         CurrentHealth = maxHealth;
     }
 
-    public void TakeDamage(float amount)
+    public void TakeDamage(float damage)
     {
-        if (!IsAlive || amount <= 0f)
+        if (!IsAlive || damage <= 0f)
         {
             return;
         }
 
-        CurrentHealth = Mathf.Max(
-            0f,
-            CurrentHealth - amount
-        );
-
-        HealthChanged?.Invoke(CurrentHealth, maxHealth);
+        CurrentHealth = Mathf.Max(CurrentHealth - damage, 0f);
 
         Debug.Log(
-            $"{name} received {amount} damage. " +
-            $"Health: {CurrentHealth}/{maxHealth}"
+            $"{gameObject.name} received {damage:0.#} damage. " +
+            $"Health: {CurrentHealth:0.#}/{maxHealth:0.#}"
         );
 
-        if (!IsAlive)
-        {
-            Die();
-        }
-    }
-
-    public void ResetHealth()
-    {
-        CurrentHealth = maxHealth;
-        gameObject.SetActive(true);
-
         HealthChanged?.Invoke(CurrentHealth, maxHealth);
-    }
 
-    private void Die()
-    {
-        Died?.Invoke();
-
-        Debug.Log($"{name} died.");
-
-        if (disableOnDeath)
+        if (!IsAlive && !deathInvoked)
         {
-            gameObject.SetActive(false);
+            deathInvoked = true;
+            Died?.Invoke();
         }
     }
 
-    [ContextMenu("Test: Take 25 Damage")]
-    private void TakeTestDamage()
+    private void OnValidate()
     {
-        if (!Application.isPlaying)
-        {
-            Debug.LogWarning(
-                "Enter Play Mode before testing damage."
-            );
-
-            return;
-        }
-
-        TakeDamage(25f);
+        maxHealth = Mathf.Max(1f, maxHealth);
     }
 }
