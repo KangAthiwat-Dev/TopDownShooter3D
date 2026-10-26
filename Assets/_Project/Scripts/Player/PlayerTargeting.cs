@@ -8,6 +8,7 @@ public enum TargetPriority
 }
 
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(-200)]
 public class PlayerTargeting : MonoBehaviour
 {
     [Header("Target Settings")]

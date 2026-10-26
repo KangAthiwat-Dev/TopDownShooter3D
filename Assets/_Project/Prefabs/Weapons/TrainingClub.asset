@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e29a3c4d6f84be9a0c2d5e6f7182930, type: 3}
+  m_Name: TrainingClub
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeWeaponDefinition
+  displayName: Training Club
+  heldPrefab: {fileID: 100000, guid: a152d6f7092b4e1cb3f508192a4b5c63, type: 3}
+  damage: 30
+  killsInOneHit: 1
+  hitRange: 2.5
+  hitNormalizedTime: 0.35
+  gripPosition: {x: 0, y: 0, z: 0}
+  gripEulerAngles: {x: 0, y: 0, z: 90}
+  backPosition: {x: 0.24, y: -0.45, z: -0.22}
+  backEulerAngles: {x: 0, y: 0, z: 35}

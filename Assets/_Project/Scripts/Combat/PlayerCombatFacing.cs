@@ -9,14 +9,18 @@ public class PlayerCombatFacing : MonoBehaviour
 
     [Header("Facing")]
     [SerializeField, Min(0f)] private float aimHoldDuration = 0.5f;
-    [SerializeField, Min(0f)] private float rotationSpeed = 1080f;
-    [SerializeField] private bool snapOnShot = true;
+    [SerializeField, Min(1f)] private float rotationSpeed = 1080f;
 
+    private PlayerTargeting targeting;
+    private PlayerInteractor interactor;
+    private PlayerMeleeAttack meleeAttack;
+    private PlayerHealth health;
     private Targetable currentTarget;
     private float aimTimer;
 
-    public bool IsAiming =>
-        aimTimer > 0f && IsUsableTarget(currentTarget);
+    public Targetable AimTarget => IsAiming ? currentTarget : null;
+    public bool IsAiming => CanAim() && IsCurrentRangedTarget(currentTarget) &&
+                            (attackController.IsAttackHeld || aimTimer > 0f);
 
     private void Awake()
     {
@@ -29,107 +33,71 @@ public class PlayerCombatFacing : MonoBehaviour
         {
             playerMovement = GetComponent<PlayerMovement>();
         }
+        targeting = GetComponent<PlayerTargeting>();
+        interactor = GetComponent<PlayerInteractor>();
+        meleeAttack = GetComponent<PlayerMeleeAttack>();
+        health = GetComponent<PlayerHealth>();
     }
 
-    private void OnEnable()
+    // Called only by PlayerMovement, before Animator evaluation. There is no
+    // second Update/LateUpdate writer pulling the root back towards movement.
+    public bool TryGetFacingRotation(float deltaTime, out Quaternion rotation)
     {
-        attackController.RangedAttackRequested += HandleRangedAttack;
-        attackController.MeleeAttackRequested += HandleMeleeAttack;
-    }
-
-    private void OnDisable()
-    {
-        if (attackController != null)
-        {
-            attackController.RangedAttackRequested -= HandleRangedAttack;
-            attackController.MeleeAttackRequested -= HandleMeleeAttack;
-        }
-
-        ClearAim();
-    }
-
-    private void LateUpdate()
-    {
-        // ระหว่าง Dash ให้ระบบ Dash ควบคุมทิศทาง
-        if (playerMovement != null && playerMovement.IsDashing)
+        rotation = transform.rotation;
+        if (!CanAim())
         {
             ClearAim();
-            return;
+            return false;
         }
 
-        if (aimTimer <= 0f)
+        Targetable selected = targeting != null ? targeting.CurrentTarget : null;
+        if (attackController.IsAttackHeld && IsCurrentRangedTarget(selected))
+        {
+            currentTarget = selected;
+            aimTimer = aimHoldDuration;
+        }
+        else
+        {
+            aimTimer = Mathf.Max(0f, aimTimer - Mathf.Max(0f, deltaTime));
+        }
+
+        if (!IsAiming)
         {
             ClearAim();
-            return;
+            return false;
         }
 
-        aimTimer -= Time.deltaTime;
-
-        if (!IsUsableTarget(currentTarget))
-        {
-            ClearAim();
-            return;
-        }
-
-        FaceTarget(false);
-    }
-
-    private void HandleRangedAttack(Targetable target)
-    {
-        if (!IsUsableTarget(target))
-        {
-            return;
-        }
-
-        currentTarget = target;
-        aimTimer = aimHoldDuration;
-
-        // หันทันทีในเฟรมที่ยิง ป้องกันการยิงออกด้านหลัง
-        FaceTarget(snapOnShot);
-    }
-
-    private void HandleMeleeAttack(Targetable target)
-    {
-        // PlayerMeleeAttack จะเป็นผู้ควบคุมการหันตอนต่อย
-        ClearAim();
-    }
-
-    private void FaceTarget(bool instant)
-    {
-        Vector3 direction =
-            currentTarget.AimPoint.position - transform.position;
-
+        Vector3 direction = currentTarget.AimPoint.position - transform.position;
         direction.y = 0f;
+        if (direction.sqrMagnitude <= 0.0001f) return false;
 
-        if (direction.sqrMagnitude < 0.001f)
-        {
-            return;
-        }
-
-        Quaternion targetRotation =
-            Quaternion.LookRotation(direction.normalized, Vector3.up);
-
-        if (instant)
-        {
-            transform.rotation = targetRotation;
-            return;
-        }
-
-        transform.rotation = Quaternion.RotateTowards(
-            transform.rotation,
-            targetRotation,
-            rotationSpeed * Time.deltaTime
-        );
+        rotation = Quaternion.RotateTowards(transform.rotation,
+            Quaternion.LookRotation(direction, Vector3.up), rotationSpeed * Mathf.Max(0f, deltaTime));
+        return true;
     }
 
-    private bool IsUsableTarget(Targetable target)
+    private bool CanAim()
     {
-        return target != null && target.IsTargetable;
+        return isActiveAndEnabled && attackController != null && attackController.isActiveAndEnabled &&
+               playerMovement != null && playerMovement.isActiveAndEnabled &&
+               !playerMovement.IsDashing && !playerMovement.IsShadowDashing &&
+               !playerMovement.IsInteractionLocked &&
+               (interactor == null || !interactor.IsInteracting) &&
+               (meleeAttack == null || !meleeAttack.IsAttacking) &&
+               (health == null || health.IsAlive);
     }
 
-    private void ClearAim()
+    private bool IsCurrentRangedTarget(Targetable target)
+    {
+        return target != null && target.IsTargetable && targeting != null &&
+               targeting.isActiveAndEnabled && !targeting.IsCloseTarget && targeting.CurrentTarget == target;
+    }
+
+    public void ClearAim()
     {
         currentTarget = null;
         aimTimer = 0f;
     }
+
+    private void OnDisable() => ClearAim();
 }

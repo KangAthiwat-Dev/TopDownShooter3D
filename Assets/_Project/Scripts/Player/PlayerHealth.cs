@@ -1,9 +1,17 @@
 using System;
 using UnityEngine;
 
+[RequireComponent(typeof(PlayerMovement))]
+
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
     [SerializeField] private float maxHealth = 100f;
+
+    private PlayerMovement playerMovement;
+
+    public bool IsInvulnerable =>
+        playerMovement != null &&
+        playerMovement.IsShadowDashing;
 
     public float MaxHealth => maxHealth;
     public float CurrentHealth { get; private set; }
@@ -14,19 +22,30 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void Awake()
     {
+        playerMovement = GetComponent<PlayerMovement>();
         CurrentHealth = maxHealth;
     }
 
     public void TakeDamage(float damage)
     {
-        if (IsDead || damage <= 0f)
+        if (
+            IsDead ||
+            IsInvulnerable ||
+            damage <= 0f
+        )
         {
             return;
         }
 
-        CurrentHealth = Mathf.Max(CurrentHealth - damage, 0f);
+        CurrentHealth = Mathf.Max(
+            CurrentHealth - damage,
+            0f
+        );
 
-        HealthChanged?.Invoke(CurrentHealth, maxHealth);
+        HealthChanged?.Invoke(
+            CurrentHealth,
+            maxHealth
+        );
 
         Debug.Log(
             $"Player received {damage:0.#} damage. " +

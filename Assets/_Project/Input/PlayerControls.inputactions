@@ -35,6 +35,36 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "Interact",
+                    "type": "Button",
+                    "id": "06e342c5-2f5f-4fe0-875f-edac8abc14fc",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "ShadowDash",
+                    "type": "Button",
+                    "id": "aab01e37-79c8-4164-b6ca-de1c7996a0db",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Run",
+                    "type": "Button",
+                    "id": "f28caeb1-59cf-4931-a4f4-85767a963f92",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -147,7 +177,78 @@
                     "action": "Attack",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3b1de539-c5f9-42aa-a79f-b5bef219f7bd",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f97b2d62-a187-4d05-aedb-b0dc8c39afeb",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a3345b8a-94b1-42a6-86bf-c2a0e0614581",
+                    "path": "<Keyboard>/m",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ShadowDash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ff5b5b58-1e30-4d28-9e96-ccb048dec64f",
+                    "path": "<Gamepad>/leftShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ShadowDash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e8461db2-8ada-4310-8119-4b501c0e6b49",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Run",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
+            ]
+        }
+        ,
+        {
+            "name": "Menus",
+            "id": "85b79ccd-476a-4bb6-902f-1ee4a1b93fe8",
+            "actions": [
+                { "name": "Inventory", "type": "Button", "id": "9036a26b-8441-43e4-95ba-c582f4c479c7", "expectedControlType": "Button", "initialStateCheck": false },
+                { "name": "Close", "type": "Button", "id": "2bdc9a87-306c-40a3-a461-825f59601410", "expectedControlType": "Button", "initialStateCheck": false }
+            ],
+            "bindings": [
+                { "id": "41657b04-a762-44ae-b1b8-ce32805d9c97", "path": "<Keyboard>/i", "action": "Inventory", "isComposite": false, "isPartOfComposite": false },
+                { "id": "60d2bf0f-980c-48b3-a643-e213263cd9a4", "path": "<Keyboard>/tab", "action": "Inventory", "isComposite": false, "isPartOfComposite": false },
+                { "id": "903087f8-8c4f-4d55-b197-5b7d48cb194e", "path": "<Gamepad>/select", "action": "Inventory", "isComposite": false, "isPartOfComposite": false },
+                { "id": "7dec6e94-0fbc-4ee5-bb81-4a31054dc650", "path": "<Keyboard>/escape", "action": "Close", "isComposite": false, "isPartOfComposite": false },
+                { "id": "65a54db1-4087-40ab-afb3-b63ad46955da", "path": "<Gamepad>/buttonEast", "action": "Close", "isComposite": false, "isPartOfComposite": false }
             ]
         }
     ],

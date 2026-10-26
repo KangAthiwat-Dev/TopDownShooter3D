@@ -16,6 +16,8 @@ public class EnemyAttack : MonoBehaviour
     private bool isAttacking;
     private int attackHash;
 
+    public event System.Action AttackStarted;
+
     private void Awake()
     {
         enemyAI = GetComponent<EnemyAI>();
@@ -29,8 +31,8 @@ public class EnemyAttack : MonoBehaviour
 
     private void Update()
     {
-        if (isAttacking ||
-            !enemyAI.IsInAttackRange ||
+        if (Time.timeScale <= 0f || isAttacking ||
+            !enemyAI.IsInAttackRange || !enemyAI.CanAttackTarget() ||
             enemyAI.Target == null)
         {
             return;
@@ -42,6 +44,7 @@ public class EnemyAttack : MonoBehaviour
     private IEnumerator AttackRoutine()
     {
         isAttacking = true;
+        AttackStarted?.Invoke();
 
         if (animator != null &&
             animator.runtimeAnimatorController != null)
@@ -51,8 +54,10 @@ public class EnemyAttack : MonoBehaviour
 
         // รอให้ท่าเหวี่ยงอาวุธมาถึงจังหวะโดน
         yield return new WaitForSeconds(hitDelay);
+        // A menu can open in the same frame that this delay becomes ready.
+        while (Time.timeScale <= 0f) yield return null;
 
-        if (enemyAI.IsInAttackRange &&
+        if (enemyAI.CanAttackTarget() &&
             enemyAI.Target != null)
         {
             IDamageable damageable =

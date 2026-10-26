@@ -12,6 +12,8 @@
 /[Bb]uild/
 /[Bb]uilds/
 /[Ll]ogs/
+# Recoverable original asset-pack copies; keep outside Unity and source control.
+/Backups/MedievalVillageKit_ModelOnly_*/
 /[Uu]ser[Ss]ettings/
 *.log
 

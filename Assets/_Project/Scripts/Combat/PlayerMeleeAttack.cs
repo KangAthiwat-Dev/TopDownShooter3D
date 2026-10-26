@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerAttackController))]
@@ -11,14 +10,28 @@ public class PlayerMeleeAttack : MonoBehaviour
     [Header("Unarmed Attack")]
     [SerializeField, Min(0f)] private float unarmedDamage = 15f;
     [SerializeField, Min(0.1f)] private float hitRange = 2.2f;
-    [SerializeField, Min(0f)] private float windUpTime = 0.1f;
-    [SerializeField, Min(0f)] private float recoveryTime = 0.12f;
+
+    [Header("Animation Timing")]
+    [SerializeField, Range(0f, 1f)] private float hitNormalizedTime = 0.35f;
+    [SerializeField, Min(0.1f)] private float animationStartTimeout = 0.5f;
 
     [Header("Runtime")]
     [SerializeField] private bool attackInProgress;
 
     private Targetable pendingTarget;
-    private Coroutine attackRoutine;
+    private PlayerAnimationController animationController;
+    private PlayerMovement playerMovement;
+    private PlayerHealth playerHealth;
+    private bool animationStarted;
+    private bool hitResolved;
+    private float animationStartDeadline;
+    private PlayerMeleeEquipment equipment;
+    private PlayerInteractor playerInteractor;
+    private PlayerInputGate inputGate;
+    private float activeDamage;
+    private bool activeKillsInOneHit;
+    private float activeHitRange;
+    private float activeHitTime;
 
     public bool IsAttacking => attackInProgress;
 
@@ -31,11 +44,23 @@ public class PlayerMeleeAttack : MonoBehaviour
         {
             attackController = GetComponent<PlayerAttackController>();
         }
+
+        animationController = GetComponent<PlayerAnimationController>();
+        playerMovement = GetComponent<PlayerMovement>();
+        playerHealth = GetComponent<PlayerHealth>();
+        equipment = GetComponent<PlayerMeleeEquipment>();
+        playerInteractor = GetComponent<PlayerInteractor>();
+        inputGate = GetComponent<PlayerInputGate>();
     }
 
     private void OnEnable()
     {
         attackController.MeleeAttackRequested += HandleMeleeAttack;
+
+        if (playerHealth != null)
+        {
+            playerHealth.Died += CancelAttack;
+        }
     }
 
     private void OnDisable()
@@ -45,70 +70,110 @@ public class PlayerMeleeAttack : MonoBehaviour
             attackController.MeleeAttackRequested -= HandleMeleeAttack;
         }
 
-        if (attackRoutine != null)
+        if (playerHealth != null)
         {
-            StopCoroutine(attackRoutine);
+            playerHealth.Died -= CancelAttack;
         }
 
-        attackRoutine = null;
-        pendingTarget = null;
-        attackInProgress = false;
+        CancelAttack();
     }
 
     private void LateUpdate()
     {
-        // ระหว่างออกหมัด ให้ตัวละครหันหาเป้าหมาย
-        if (attackInProgress && IsUsableTarget(pendingTarget))
+        if (inputGate != null && inputGate.BlocksGameplay) return;
+        if (!attackInProgress)
+        {
+            return;
+        }
+
+        if (!CanContinueAttack())
+        {
+            CancelAttack();
+            return;
+        }
+
+        if (IsUsableTarget(pendingTarget))
         {
             FaceTarget(pendingTarget);
+        }
+
+        if (!animationController.TryGetMeleeProgress(out float progress))
+        {
+            if (animationStarted || Time.time >= animationStartDeadline)
+            {
+                CancelAttack();
+            }
+
+            return;
+        }
+
+        animationStarted = true;
+
+        // ใช้จังหวะจากคลิปจริง เพื่อให้เปลี่ยนความเร็วท่าได้โดย damage ยังตรงกัน
+        if (!hitResolved && progress >= activeHitTime)
+        {
+            hitResolved = true;
+
+            if (IsTargetInHitRange(pendingTarget))
+            {
+                Targetable hitTarget = pendingTarget;
+                float damage = activeKillsInOneHit ? hitTarget.Health.CurrentHealth : activeDamage;
+                hitTarget.Health.TakeDamage(damage);
+                MeleeHitConfirmed?.Invoke(hitTarget);
+            }
         }
     }
 
     private void HandleMeleeAttack(Targetable target)
     {
-        if (attackInProgress || !IsUsableTarget(target))
+        MeleeWeaponDefinition weapon = equipment != null ? equipment.CurrentWeapon : null;
+        float requestedRange = weapon != null ? weapon.HitRange : hitRange;
+        if (attackInProgress ||
+            !CanContinueAttack() ||
+            !IsTargetInHitRange(target, requestedRange) ||
+            !animationController.TryPlayMeleeAttack(weapon != null))
         {
             return;
         }
 
-        attackRoutine = StartCoroutine(PerformAttack(target));
+        attackInProgress = true;
+        activeDamage = weapon != null ? weapon.Damage : unarmedDamage;
+        activeKillsInOneHit = weapon != null && weapon.KillsInOneHit;
+        activeHitRange = requestedRange;
+        activeHitTime = weapon != null ? weapon.HitNormalizedTime : hitNormalizedTime;
+        pendingTarget = target;
+        animationStarted = false;
+        hitResolved = false;
+        animationStartDeadline = Time.time + animationStartTimeout;
+        FaceTarget(target);
     }
 
-    private IEnumerator PerformAttack(Targetable target)
+    private void CancelAttack()
     {
-        attackInProgress = true;
-        pendingTarget = target;
-
-        FaceTarget(target);
-
-        // ช่วงง้างหมัด
-        if (windUpTime > 0f)
-        {
-            yield return new WaitForSeconds(windUpTime);
-        }
-
-        // ตรวจอีกครั้งตอนหมัดโดนจริง
-        if (IsTargetInHitRange(target))
-        {
-            target.Health.TakeDamage(unarmedDamage);
-            MeleeHitConfirmed?.Invoke(target);
-
-            Debug.Log($"Melee hit: {target.name}");
-        }
-        else
-        {
-            Debug.Log("Melee missed: target left the hit range");
-        }
-
-        // ช่วงพักหลังโจมตี
-        if (recoveryTime > 0f)
-        {
-            yield return new WaitForSeconds(recoveryTime);
-        }
-
+        bool wasAttacking = attackInProgress;
         pendingTarget = null;
         attackInProgress = false;
-        attackRoutine = null;
+        animationStarted = false;
+        hitResolved = false;
+
+        if (wasAttacking && animationController != null)
+        {
+            animationController.CancelMeleeAttack();
+        }
+    }
+
+    private bool CanContinueAttack()
+    {
+        return attackController != null &&
+               attackController.isActiveAndEnabled &&
+               animationController != null &&
+               animationController.isActiveAndEnabled &&
+               (playerInteractor == null || !playerInteractor.IsInteracting) &&
+               (playerHealth == null || playerHealth.IsAlive) &&
+               (playerMovement == null ||
+                (playerMovement.isActiveAndEnabled &&
+                 !playerMovement.IsDashing &&
+                 !playerMovement.IsShadowDashing));
     }
 
     private bool IsUsableTarget(Targetable target)
@@ -118,6 +183,11 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private bool IsTargetInHitRange(Targetable target)
     {
+        return IsTargetInHitRange(target, activeHitRange);
+    }
+
+    private bool IsTargetInHitRange(Targetable target, float range)
+    {
         if (!IsUsableTarget(target))
         {
             return false;
@@ -126,7 +196,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         Vector3 offset = target.AimPoint.position - transform.position;
         offset.y = 0f;
 
-        return offset.sqrMagnitude <= hitRange * hitRange;
+        return offset.sqrMagnitude <= range * range;
     }
 
     private void FaceTarget(Targetable target)

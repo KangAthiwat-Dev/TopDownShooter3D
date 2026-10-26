@@ -7,6 +7,7 @@ public class Projectile : MonoBehaviour
     [Header("Lifetime")]
     [SerializeField, Min(0.1f)]
     private float lifetime = 3f;
+    [SerializeField] private RangedBurstVfx impactVfx;
 
     private Rigidbody body;
     private GameObject owner;
@@ -58,7 +59,7 @@ public class Projectile : MonoBehaviour
             damageable.IsAlive)
         {
             hasHit = true;
-
+            ShowImpact(other);
             damageable.TakeDamage(damage);
             Destroy(gameObject);
 
@@ -69,7 +70,14 @@ public class Projectile : MonoBehaviour
         if (!other.isTrigger)
         {
             hasHit = true;
+            ShowImpact(other);
             Destroy(gameObject);
         }
+    }
+    private void ShowImpact(Collider other)
+    {
+        if (impactVfx == null) return;
+        Vector3 normal = body.linearVelocity.sqrMagnitude > 0.0001f ? -body.linearVelocity.normalized : -transform.forward;
+        Instantiate(impactVfx, other.ClosestPoint(transform.position), Quaternion.LookRotation(normal));
     }
 }
