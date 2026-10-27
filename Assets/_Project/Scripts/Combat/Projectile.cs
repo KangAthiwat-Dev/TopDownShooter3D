@@ -60,7 +60,8 @@ public class Projectile : MonoBehaviour
         {
             hasHit = true;
             ShowImpact(other);
-            damageable.TakeDamage(damage);
+            if (damageable is EnemyHealth enemy) enemy.TakeDamage(damage, owner);
+            else damageable.TakeDamage(damage);
             Destroy(gameObject);
 
             return;

@@ -2,12 +2,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using System.Collections;
 
 public class GameOverUI : MonoBehaviour
 {
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GamePauseController pauseController;
+    private Coroutine pendingPresentation;
 
     private void Awake()
     {
@@ -41,6 +43,7 @@ public class GameOverUI : MonoBehaviour
 
     private void OnDisable()
     {
+        if(pendingPresentation!=null){StopCoroutine(pendingPresentation);pendingPresentation=null;}
         if (playerHealth != null)
         {
             playerHealth.Died -= ShowGameOver;
@@ -50,6 +53,25 @@ public class GameOverUI : MonoBehaviour
     private void ShowGameOver()
     {
         if (pauseController != null) pauseController.SetPaused(GamePauseReason.GameOver, true);
+        if (pauseController == null) Time.timeScale = 0f;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+        if(pendingPresentation!=null)return;
+        var death=playerHealth!=null?playerHealth.GetComponent<PlayerDeathPresentation>():null;
+        float delay=death!=null&&death.isActiveAndEnabled?death.GameOverDelay:0;
+        if(delay>0)pendingPresentation=StartCoroutine(ShowAfterDeath(delay));
+        else RevealPanel();
+    }
+
+    private IEnumerator ShowAfterDeath(float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        pendingPresentation=null;
+        if(playerHealth!=null&&!playerHealth.IsAlive)RevealPanel();
+    }
+
+    private void RevealPanel()
+    {
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
@@ -57,14 +79,11 @@ public class GameOverUI : MonoBehaviour
             Button restart = gameOverPanel.GetComponentInChildren<Button>();
             if (restart != null && EventSystem.current != null) EventSystem.current.SetSelectedGameObject(restart.gameObject);
         }
-
-        if (pauseController == null) Time.timeScale = 0f;
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
     }
 
     public void RestartGame()
     {
+        if(pendingPresentation!=null){StopCoroutine(pendingPresentation);pendingPresentation=null;}
         if (pauseController != null) pauseController.ResetForRestart();
         Time.timeScale = 1f;
 

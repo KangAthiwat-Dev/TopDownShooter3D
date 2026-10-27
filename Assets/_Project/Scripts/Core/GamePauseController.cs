@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 [Flags]
-public enum GamePauseReason { None = 0, Inventory = 1, GameOver = 2 }
+public enum GamePauseReason { None = 0, Inventory = 1, GameOver = 2, Upgrades = 4 }
 
 // One owner of time/cursor/audio. Closing Inventory cannot clear Game Over's
 // independent reason, even if the two death subscribers run in another order.

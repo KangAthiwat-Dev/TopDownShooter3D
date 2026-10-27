@@ -84,7 +84,8 @@ public class InventoryPanelUI : MonoBehaviour
     public bool TryOpen()
     {
         if (IsOpen || !isActiveAndEnabled || !playerHealth.IsAlive || pauseController == null ||
-            !pauseController.isActiveAndEnabled || pauseController.IsGameOver) return false;
+            !pauseController.isActiveAndEnabled || pauseController.IsGameOver ||
+            (pauseController.Reasons & GamePauseReason.Upgrades) != 0) return false;
         previousSelection = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
         pauseController.SetPaused(GamePauseReason.Inventory, true);
         IsOpen = true; window.SetActive(true); window.transform.SetAsLastSibling(); openButton.interactable = false;
@@ -148,8 +149,8 @@ public class InventoryPanelUI : MonoBehaviour
         detailName.text = selectedItem != null ? selectedItem.DisplayName : selectedWeapon != null ? selectedWeapon.DisplayName : "Nothing here yet";
         detailType.text = selectedItem != null ? selectedItem.Category.ToString().ToUpperInvariant() : selectedWeapon != null ? "MELEE WEAPON" : "EMPTY SLOT";
         detailDescription.text = selectedItem != null ? selectedItem.Description : selectedWeapon != null ? selectedWeapon.Description :
-            "Supplies go in slots 1-8.\n\nYour two melee weapons stay linked to the equipment system. Pick one up in the world to see it here.";
-        detailStats.text = selectedItem != null ? $"QUANTITY   {inventory.GetQuantity(selectedSlot)} / {selectedItem.MaxStack}\n\nItem use and dropping will be added later." :
+            "Collect supplies or a melee weapon to view its details here.\n\nSupplies use slots 1-8. The last two slots hold melee weapons.";
+        detailStats.text = selectedItem != null ? $"QUANTITY   {inventory.GetQuantity(selectedSlot)} / {selectedItem.MaxStack}" :
             selectedWeapon != null ? $"HIT RANGE   {selectedWeapon.HitRange:0.#} m\nDAMAGE      {(selectedWeapon.KillsInOneHit ? "ONE-HIT KILL" : selectedWeapon.Damage.ToString("0.#"))}\n\nDrawn automatically near enemies." : "";
         detailIcon.sprite = selectedItem != null ? selectedItem.Icon : selectedWeapon != null ? selectedWeapon.HudIcon : null;
         detailIcon.gameObject.SetActive(detailIcon.sprite != null);

@@ -44,6 +44,7 @@ public class EnemyAttack : MonoBehaviour
     private IEnumerator AttackRoutine()
     {
         isAttacking = true;
+        Transform intendedVictim = enemyAI.Target;
         AttackStarted?.Invoke();
 
         if (animator != null &&
@@ -58,7 +59,7 @@ public class EnemyAttack : MonoBehaviour
         while (Time.timeScale <= 0f) yield return null;
 
         if (enemyAI.CanAttackTarget() &&
-            enemyAI.Target != null)
+            enemyAI.Target != null && enemyAI.Target == intendedVictim)
         {
             IDamageable damageable =
                 enemyAI.Target.GetComponent<IDamageable>();

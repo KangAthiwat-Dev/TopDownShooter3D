@@ -26,6 +26,8 @@ public class InventoryHotbarUI : MonoBehaviour
     [SerializeField] private PlayerInventory inventory;
     [SerializeField] private SlotView[] slots = new SlotView[TotalSlots];
     [SerializeField] private TMP_Text meleeCountText;
+    [SerializeField] private TMP_Text supplyCountText;
+    [SerializeField] private Sprite emptySlotSprite, selectedSlotSprite;
     [SerializeField] private Color selectedColor = new Color(1f, 0.76f, 0.32f);
     [SerializeField] private Color meleeColor = new Color(0.58f, 0.45f, 0.27f);
     [SerializeField] private Color reservedColor = new Color(0.25f, 0.29f, 0.34f);
@@ -80,7 +82,11 @@ public class InventoryHotbarUI : MonoBehaviour
             bool occupied = weapon != null || item != null;
             bool selected = weapon != null && equipment != null && equipment.SelectedSlotIndex == weaponSlot;
 
-            if (view.frame != null) view.frame.color = selected ? selectedColor : meleeSlot ? meleeColor : reservedColor;
+            if (view.frame != null)
+            {
+                if(emptySlotSprite!=null){view.frame.sprite=selected&&selectedSlotSprite!=null?selectedSlotSprite:emptySlotSprite;view.frame.color=Color.white;}
+                else view.frame.color = selected ? selectedColor : meleeSlot ? meleeColor : reservedColor;
+            }
             if (view.background != null) view.background.color = selected
                 ? new Color(0.19f, 0.15f, 0.10f, 0.98f)
                 : new Color(0.055f, 0.068f, 0.085f, 0.96f);
@@ -89,13 +95,18 @@ public class InventoryHotbarUI : MonoBehaviour
                 view.icon.sprite = meleeSlot ? weapon != null ? weapon.HudIcon : null : item != null ? item.Icon : null;
                 view.icon.gameObject.SetActive(view.icon.sprite != null);
             }
-            if (view.fallbackIcon != null) view.fallbackIcon.SetActive(weapon != null && weapon.HudIcon == null);
+            if (view.fallbackIcon != null)
+            {
+                view.fallbackIcon.SetActive(weapon != null && weapon.HudIcon == null);
+                var glyph=view.fallbackIcon.GetComponent<TMP_Text>();
+                if(emptySlotSprite!=null&&glyph!=null)glyph.color=selected?new Color(.22f,.13f,.065f):selectedColor;
+            }
             if (view.emptyMark != null)
             {
                 view.emptyMark.gameObject.SetActive(!occupied || (item != null && item.Icon == null));
                 view.emptyMark.text = item != null && !string.IsNullOrEmpty(item.DisplayName) ? item.DisplayName.Substring(0, 1).ToUpperInvariant() : "+";
             }
-            if (view.itemName != null) view.itemName.text = weapon != null ? weapon.DisplayName : item != null ? item.DisplayName : meleeSlot ? "EMPTY" : "SUPPLY";
+            if (view.itemName != null) { view.itemName.text = weapon != null ? weapon.DisplayName : item != null ? item.DisplayName : meleeSlot ? "EMPTY" : "SUPPLY"; }
             if (view.stateLabel != null)
             {
                 view.stateLabel.text = selected ? "ACTIVE" : weapon != null ? "STORED" : item != null ? "x" + inventory.GetQuantity(i) : string.Empty;
@@ -108,5 +119,6 @@ public class InventoryHotbarUI : MonoBehaviour
         {
             meleeCountText.text = $"MELEE   {(equipment != null ? equipment.WeaponCount : 0)} / {PlayerMeleeEquipment.Capacity}";
         }
+        if(supplyCountText!=null)supplyCountText.text=$"SUPPLIES   {(inventory!=null?inventory.OccupiedSlots:0)} / {ReservedDropSlots}";
     }
 }

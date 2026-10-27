@@ -8,9 +8,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1394233963004513294, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
+      propertyPath: chaseSpeed
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1394233963004513294, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
+      propertyPath: patrolSpeed
+      value: 1.2
+      objectReference: {fileID: 0}
     - target: {fileID: 1535475746043193294, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: m_Speed
-      value: 4.2
+      value: 3.2
       objectReference: {fileID: 0}
     - target: {fileID: 1828068328555101219, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: m_Controller
@@ -26,15 +34,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1835770314389507425, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: damage
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 1835770314389507425, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: attackCooldown
-      value: 0.8
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 2631527465248342473, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: maxHealth
-      value: 120
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 2631527465248342473, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
+      propertyPath: experienceReward
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 4501203795085606874, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: m_LocalPosition.x
@@ -86,8 +98,29 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3217360138931875668, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4902417490098276032}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7713374244399172798, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7810085171037581099}
   m_SourcePrefab: {fileID: 100100000, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
+--- !u!1 &3095848822850128681 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7713374244399172798, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
+  m_PrefabInstance: {fileID: 4755171289508104087}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7810085171037581099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3095848822850128681}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ce9c4e8418764fe5a0c6eb375fb57bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyLootDropper
+  table: {fileID: 11400000, guid: 4c7feca9163ca4d499a376b9e6504287, type: 2}
 --- !u!4 &7880066898556971203 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3217360138931875668, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}

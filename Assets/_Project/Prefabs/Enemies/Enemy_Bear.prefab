@@ -2006,7 +2006,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1394233963004513294, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: chaseSpeed
-      value: 4
+      value: 3.2
       objectReference: {fileID: 0}
     - target: {fileID: 1394233963004513294, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: attackRange
@@ -2014,11 +2014,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1394233963004513294, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: patrolSpeed
-      value: 1.4
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 1535475746043193294, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: m_Speed
-      value: 4
+      value: 3.2
       objectReference: {fileID: 0}
     - target: {fileID: 1535475746043193294, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: m_Height
@@ -2030,7 +2030,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1835770314389507425, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: damage
-      value: 20
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 1835770314389507425, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: animator
@@ -2042,11 +2042,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1835770314389507425, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: attackCooldown
-      value: 1.8
+      value: 2.2
       objectReference: {fileID: 0}
     - target: {fileID: 2631527465248342473, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: maxHealth
-      value: 280
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 2631527465248342473, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
+      propertyPath: experienceReward
+      value: 140
       objectReference: {fileID: 0}
     - target: {fileID: 3859173837165439262, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       propertyPath: animator
@@ -2141,6 +2145,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7713374244399172798, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6037406473850066902}
+    - targetCorrespondingSourceObject: {fileID: 7713374244399172798, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7333997266588708299}
   m_SourcePrefab: {fileID: 100100000, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}
 --- !u!1 &2096024945352182428 stripped
 GameObject:
@@ -2170,6 +2177,19 @@ MonoBehaviour:
   pitchRange: {x: 0.96, y: 1.04}
   ambientInterval: {x: 8, y: 14}
   hurtCooldown: 0.6
+--- !u!114 &7333997266588708299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2096024945352182428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ce9c4e8418764fe5a0c6eb375fb57bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyLootDropper
+  table: {fileID: 11400000, guid: 0758996f406534046a87d2c8b94495dc, type: 2}
 --- !u!4 &5218132204741982712 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4501203795085606874, guid: 85f261288b8c14f7fba5bf686276b167, type: 3}

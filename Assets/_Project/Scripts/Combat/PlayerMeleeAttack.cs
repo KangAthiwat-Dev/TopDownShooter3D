@@ -117,8 +117,9 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (IsTargetInHitRange(pendingTarget))
             {
                 Targetable hitTarget = pendingTarget;
-                float damage = activeKillsInOneHit ? hitTarget.Health.CurrentHealth : activeDamage;
-                hitTarget.Health.TakeDamage(damage);
+                float damage = activeKillsInOneHit && hitTarget.Health.AllowInstantKill
+                    ? hitTarget.Health.CurrentHealth : activeDamage;
+                hitTarget.Health.TakeDamage(damage, gameObject);
                 MeleeHitConfirmed?.Invoke(hitTarget);
             }
         }
@@ -193,10 +194,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             return false;
         }
 
-        Vector3 offset = target.AimPoint.position - transform.position;
-        offset.y = 0f;
-
-        return offset.sqrMagnitude <= range * range;
+        return target.HorizontalDistanceSquared(transform.position) <= range * range;
     }
 
     private void FaceTarget(Targetable target)

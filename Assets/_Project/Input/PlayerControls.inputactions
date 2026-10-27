@@ -234,21 +234,120 @@
                     "isPartOfComposite": false
                 }
             ]
-        }
-        ,
+        },
         {
             "name": "Menus",
             "id": "85b79ccd-476a-4bb6-902f-1ee4a1b93fe8",
             "actions": [
-                { "name": "Inventory", "type": "Button", "id": "9036a26b-8441-43e4-95ba-c582f4c479c7", "expectedControlType": "Button", "initialStateCheck": false },
-                { "name": "Close", "type": "Button", "id": "2bdc9a87-306c-40a3-a461-825f59601410", "expectedControlType": "Button", "initialStateCheck": false }
+                {
+                    "name": "Inventory",
+                    "type": "Button",
+                    "id": "9036a26b-8441-43e4-95ba-c582f4c479c7",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Close",
+                    "type": "Button",
+                    "id": "2bdc9a87-306c-40a3-a461-825f59601410",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Upgrades",
+                    "type": "Button",
+                    "id": "69695f87-c955-42e9-ae81-bc280a7397c0",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                }
             ],
             "bindings": [
-                { "id": "41657b04-a762-44ae-b1b8-ce32805d9c97", "path": "<Keyboard>/i", "action": "Inventory", "isComposite": false, "isPartOfComposite": false },
-                { "id": "60d2bf0f-980c-48b3-a643-e213263cd9a4", "path": "<Keyboard>/tab", "action": "Inventory", "isComposite": false, "isPartOfComposite": false },
-                { "id": "903087f8-8c4f-4d55-b197-5b7d48cb194e", "path": "<Gamepad>/select", "action": "Inventory", "isComposite": false, "isPartOfComposite": false },
-                { "id": "7dec6e94-0fbc-4ee5-bb81-4a31054dc650", "path": "<Keyboard>/escape", "action": "Close", "isComposite": false, "isPartOfComposite": false },
-                { "id": "65a54db1-4087-40ab-afb3-b63ad46955da", "path": "<Gamepad>/buttonEast", "action": "Close", "isComposite": false, "isPartOfComposite": false }
+                {
+                    "name": "",
+                    "id": "41657b04-a762-44ae-b1b8-ce32805d9c97",
+                    "path": "<Keyboard>/i",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Inventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "60d2bf0f-980c-48b3-a643-e213263cd9a4",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Inventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "903087f8-8c4f-4d55-b197-5b7d48cb194e",
+                    "path": "<Gamepad>/select",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Inventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7dec6e94-0fbc-4ee5-bb81-4a31054dc650",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Close",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "65a54db1-4087-40ab-afb3-b63ad46955da",
+                    "path": "<Gamepad>/buttonEast",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Close",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8efb191b-6e78-4813-b323-2b4ba595dbcb",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Upgrades",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "539be230-1afb-4dd3-aa2b-feb3f2953b32",
+                    "path": "<Gamepad>/start",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Upgrades",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
             ]
         }
     ],

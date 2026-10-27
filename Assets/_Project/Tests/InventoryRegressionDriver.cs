@@ -165,9 +165,12 @@ public class InventoryRegressionDriver : MonoBehaviour
         Check(panel.TryOpen(), "Open bag before a death event");
         health.TakeDamage(health.MaxHealth); yield return Wait(0.08f);
         GameOverUI gameOver = FindAnyObjectByType<GameOverUI>();
-        Check(!panel.IsOpen && !panel.TryOpen() && pause.IsGameOver && Time.timeScale == 0f && Get<GameObject>(gameOver, "gameOverPanel").activeInHierarchy,
+        Check(!panel.IsOpen && !panel.TryOpen() && pause.IsGameOver && Time.timeScale == 0f,
             "Death closes the bag, prevents reopening and retains the independent Game Over pause");
         panel.Close(); Check(Time.timeScale == 0f, "Closing inventory cannot unpause Game Over");
+        var deathPresentation=health.GetComponent<PlayerDeathPresentation>();
+        if(deathPresentation!=null)yield return Wait(deathPresentation.GameOverDelay+.1f);
+        Check(Get<GameObject>(gameOver,"gameOverPanel").activeInHierarchy,"Game Over becomes visible after the player's death pose");
         Check(EventSystem.current.currentSelectedGameObject != null && EventSystem.current.currentSelectedGameObject.transform.IsChildOf(Get<GameObject>(gameOver, "gameOverPanel").transform),
             "Game Over keeps restart-button focus");
         yield return Capture("GameOver");

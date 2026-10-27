@@ -15,6 +15,12 @@ public class PlayerAnimationController : MonoBehaviour
     [SerializeField, Min(0f)] private float directionDampTime = 0.12f;
     [SerializeField, Min(1f)] private float turnFullSpeed = 240f;
     [SerializeField, Min(0f)] private float turnDampTime = 0.08f;
+    [SerializeField, Min(.1f)] private float walkAnimationSpeed=2f;
+    [SerializeField, Min(.1f)] private float runAnimationSpeed=4.5f;
+    [SerializeField, Min(.1f)] private float sprintAnimationSpeed=7.5f;
+    private float movementAngle;
+    private bool hasMovementAngle;
+    private static readonly int LocomotionRateHash=Animator.StringToHash("LocomotionRate");
 
     [Header("Weapon Animation")]
     private bool hasGun;
@@ -49,6 +55,9 @@ public class PlayerAnimationController : MonoBehaviour
     private PlayerInteractor playerInteractor;
     private PlayerDashVisual dashVisual;
     private int shadowEntrySequence, shadowLandingSequence;
+    private bool deathPlaying;
+    private static readonly int DeathStateHash = Animator.StringToHash("Base Layer.Death");
+    public bool IsPlayingDeath => deathPlaying;
     private static readonly int ShadowRollHash = Animator.StringToHash("Base Layer.ShadowRollEnter");
     private static readonly int ShadowLandHash = Animator.StringToHash("Base Layer.ShadowNinjaLand");
 
@@ -168,6 +177,7 @@ public class PlayerAnimationController : MonoBehaviour
 
     private void Update()
     {
+        if (deathPlaying) return;
         if (animator == null || animator.runtimeAnimatorController == null)
         {
             return;
@@ -216,8 +226,21 @@ public class PlayerAnimationController : MonoBehaviour
         Vector3 localDirection = horizontalVelocity.sqrMagnitude > 0.0001f
             ? transform.InverseTransformDirection(horizontalVelocity.normalized)
             : Vector3.zero;
-        animator.SetFloat(MoveXHash, localDirection.x, directionDampTime, deltaTime);
-        animator.SetFloat(MoveZHash, localDirection.z, directionDampTime, deltaTime);
+        if(localDirection.sqrMagnitude>.001f)
+        {
+            float desired=Mathf.Atan2(localDirection.x,localDirection.z)*Mathf.Rad2Deg;
+            movementAngle=hasMovementAngle?Mathf.LerpAngle(movementAngle,desired,1f-Mathf.Exp(-deltaTime/Mathf.Max(.001f,directionDampTime))):desired;
+            hasMovementAngle=true;
+            // Blend around the unit circle, so turns never blend through the idle pose at (0,0).
+            localDirection=new Vector3(Mathf.Sin(movementAngle*Mathf.Deg2Rad),0,Mathf.Cos(movementAngle*Mathf.Deg2Rad));
+        }
+        else hasMovementAngle=false;
+        animator.SetFloat(MoveXHash, localDirection.x);
+        animator.SetFloat(MoveZHash, localDirection.z);
+        float authoredSpeed=speed<=playerMovement.WalkSpeed?walkAnimationSpeed:
+            speed<=playerMovement.RunSpeed?Mathf.Lerp(walkAnimationSpeed,runAnimationSpeed,Mathf.InverseLerp(playerMovement.WalkSpeed,playerMovement.RunSpeed,speed)):
+            Mathf.Lerp(runAnimationSpeed,sprintAnimationSpeed,Mathf.InverseLerp(playerMovement.RunSpeed,playerMovement.SprintSpeed,speed));
+        animator.SetFloat(LocomotionRateHash,speed<.1f?1:Mathf.Clamp(speed/authoredSpeed,.7f,1.6f));
     }
 
     private void UpdateTurnAnimation(float deltaTime)
@@ -371,6 +394,7 @@ public class PlayerAnimationController : MonoBehaviour
 
     private bool TryPlayFullBodyState(int stateHash)
     {
+        if (deathPlaying) return false;
         if (stateHash != ShadowRollHash && stateHash != ShadowLandHash &&
             (IsDashLanding || (dashVisual != null && dashVisual.IceForm != null && dashVisual.IceForm.IsReturning)))
             return false; // Melee/pickup must not replace the landing on its first frame.
@@ -439,6 +463,7 @@ public class PlayerAnimationController : MonoBehaviour
 
     public void CancelMeleeAttack()
     {
+        if (deathPlaying) return;
         if (!TryGetMeleeProgress(out _) ||
             (playerMovement != null && playerMovement.IsDashing))
         {
@@ -475,9 +500,28 @@ public class PlayerAnimationController : MonoBehaviour
 
     public void CancelPickup()
     {
+        if (deathPlaying) return;
         if (TryGetPickupProgress(out _))
         {
             animator.CrossFadeInFixedTime(LocomotionStateHash, 0.05f, 0);
         }
+    }
+
+    public bool PlayDeath()
+    {
+        deathPlaying = true;
+        if (animator == null || !animator.isActiveAndEnabled || animator.runtimeAnimatorController == null ||
+            !animator.HasState(0, DeathStateHash)) return false;
+        hasGun = hasMeleeWeapon = false;
+        animator.ResetTrigger(ShootHash); animator.ResetTrigger(DashHash); animator.SetBool(HasGunHash, false);
+        animator.SetFloat(MoveSpeedHash, 0); animator.SetFloat(MoveXHash, 0); animator.SetFloat(MoveZHash, 0);
+        animator.SetFloat(TurnBlendHash, 0); animator.SetFloat(TurnAmountHash, 0);
+        for (int layer=1; layer<animator.layerCount; layer++) animator.SetLayerWeight(layer, 0);
+        // Game Over freezes the world immediately; only this one-shot pose uses real time.
+        animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        animator.applyRootMotion = false; animator.speed = 1;
+        animator.CrossFadeInFixedTime(DeathStateHash, .08f, 0, 0);
+        return true;
     }
 }

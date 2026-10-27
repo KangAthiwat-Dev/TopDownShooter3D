@@ -18,7 +18,7 @@ public class PlayerRangedWeapon : MonoBehaviour
 
     [Header("Weapon Stats")]
     [SerializeField, Min(0f)]
-    private float damage = 20f;
+    private float damage = 8f;
 
     [SerializeField, Min(0.1f)]
     private float projectileSpeed = 18f;
@@ -32,6 +32,9 @@ public class PlayerRangedWeapon : MonoBehaviour
     private Targetable pendingTarget;
 
     public Transform MuzzlePoint => muzzlePoint;
+    public float BaseDamage => damage;
+    public float Damage => damage * Mathf.Max(1f,DamageMultiplier);
+    public float DamageMultiplier { get; set; } = 1f;
     public Targetable PendingTarget => pendingTarget;
     public event Action<Projectile> ProjectileFired;
 
@@ -100,7 +103,7 @@ public class PlayerRangedWeapon : MonoBehaviour
         Vector3 direction = muzzlePoint.forward;
         Projectile projectile = Instantiate(projectilePrefab, muzzlePoint.position,
             Quaternion.LookRotation(direction, muzzlePoint.up));
-        projectile.Initialize(direction, projectileSpeed, damage, gameObject);
+        projectile.Initialize(direction, projectileSpeed, Damage, gameObject);
         attackController.ConfirmRangedShot(shotTarget);
         ProjectileFired?.Invoke(projectile);
     }

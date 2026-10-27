@@ -1,0 +1,24 @@
+{
+    "backup": "Logs/SceneBackups/WorldPrototype_BeforeMovementCamera_20261026_150929.unity",
+    "originalSettings": "{\"MonoBehaviour\":{\"m_Enabled\":true,\"m_EditorHideFlags\":0,\"m_Name\":\"\",\"m_EditorClassIdentifier\":\"Assembly-CSharp::CameraFollow\",\"target\":{\"instanceID\":0},\"targetOffset\":{\"x\":0.0,\"y\":1.0,\"z\":0.0},\"smoothTime\":0.10000000149011612,\"followMovementHeading\":false,\"headingSmoothTime\":0.4000000059604645,\"maxHeadingSpeed\":110.0,\"minimumHeadingSpeed\":0.800000011920929,\"headingConfirmTime\":0.11999999731779099,\"headingDeadZone\":7.0,\"targetCamera\":{\"instanceID\":0},\"playerMovement\":{\"instanceID\":0},\"enableRunningBob\":true,\"bobFrequency\":2.799999952316284,\"bobAmplitude\":{\"x\":0.03500000014901161,\"y\":0.05000000074505806},\"bobRollAngle\":0.20000000298023225,\"bobBlendSpeed\":8.0}}",
+    "playerMovementHash": "8EBE35BA9C6F3D68CA2B44A67CA06BBC4FBFFC0F5E9F7E89CD0C8470C2AA1FC7",
+    "cameraLocalPosition": {
+        "x": 0.0,
+        "y": 12.0,
+        "z": -10.0
+    },
+    "cameraLocalRotation": {
+        "x": 0.4226182699203491,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.9063078761100769
+    },
+    "rigRotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+    },
+    "fieldOfView": 45.0,
+    "unchangedSceneComponents": 17037
+}

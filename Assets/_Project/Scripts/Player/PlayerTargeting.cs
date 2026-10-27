@@ -243,13 +243,7 @@ public class PlayerTargeting : MonoBehaviour
         Targetable target
     )
     {
-        Vector3 offset =
-            target.AimPoint.position -
-            transform.position;
-
-        offset.y = 0f;
-
-        return offset.sqrMagnitude;
+        return target.HorizontalDistanceSquared(transform.position);
     }
 
     private void SetTarget(Targetable newTarget)

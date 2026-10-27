@@ -16,6 +16,18 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField, Min(0.1f)] private float acceleration = 18f;
     [SerializeField, Min(0.1f)] private float deceleration = 26f;
 
+    [Header("Grounding")]
+    [SerializeField] private LayerMask groundLayers = 1 << 7;
+    [SerializeField, Min(.1f)] private float groundSnapDistance = .6f;
+    [SerializeField, Min(1)] private float gravity = 30f;
+    [SerializeField, Min(1)] private float groundStickSpeed = 4f;
+
+    [Header("Camera-Relative Controls")]
+    [SerializeField] private bool cameraRelativeMovement;
+    [SerializeField] private Transform movementReference;
+    [Tooltip("Capture the view heading on a new input direction. Holding a key keeps a straight world path while the camera catches up.")]
+    [SerializeField, Range(1f, 30f)] private float inputDirectionChangeAngle = 5f;
+
     [Header("Short Dash")]
     [SerializeField] private float dashDistance = 4f;
     [SerializeField, Min(0.01f)] private float dashDuration = 0.18f;
@@ -41,16 +53,34 @@ public class PlayerMovement : MonoBehaviour
     private float dashCooldownRemaining;
 
     private bool shadowNeedsRelease;
+    private bool sprintNeedsRelease;
+    private float verticalSpeed, lastGroundedAt = -10;
     private Vector3 locomotionVelocity;
+    private bool hasMovementHeading;
+    private Vector2 capturedInputDirection;
+    private Vector3 capturedWorldDirection;
 
     public bool IsDashing => dashTimeRemaining > 0f;
     public bool IsShadowDashing { get; private set; }
     public bool IsRunning { get; private set; }
     public bool IsSprinting => IsRunning;
+    public bool IsGrounded => characterController != null && characterController.isGrounded;
     public float WalkSpeed => Mathf.Min(walkSpeed, RunSpeed - 0.01f);
     public float RunSpeed => Mathf.Max(moveSpeed, 0.02f);
     public float SprintSpeed => Mathf.Max(runSpeed, RunSpeed + 0.01f);
     public bool IsInteractionLocked { get; private set; }
+    public bool UsesCameraRelativeMovement => cameraRelativeMovement;
+    public Transform MovementReference => movementReference;
+    public float DashCooldownRemaining => dashCooldownRemaining;
+    public float NormalizedDashCooldown => dashCooldown > 0f ? Mathf.Clamp01(dashCooldownRemaining / dashCooldown) : 0f;
+
+    public void ConfigureCameraRelativeMovement(bool cameraRelative, Transform reference)
+    {
+        cameraRelativeMovement = cameraRelative;
+        movementReference = reference;
+        // A held key must be recaptured in the newly selected view.
+        hasMovementHeading = false;
+    }
 
     public void SetInteractionLocked(bool locked)
     {
@@ -59,6 +89,7 @@ public class PlayerMovement : MonoBehaviour
         {
             IsRunning = false;
             locomotionVelocity = Vector3.zero;
+            hasMovementHeading = false;
         }
     }
 
@@ -73,6 +104,8 @@ public class PlayerMovement : MonoBehaviour
         combatFacing = GetComponent<PlayerCombatFacing>();
         meleeAttack = GetComponent<PlayerMeleeAttack>();
         inputGate = GetComponent<PlayerInputGate>();
+        if (cameraRelativeMovement && movementReference == null && Camera.main != null)
+            movementReference = Camera.main.transform;
 
         moveAction = playerInput.actions.FindAction(
             "Move",
@@ -108,7 +141,7 @@ public class PlayerMovement : MonoBehaviour
             if (combatFacing != null) combatFacing.ClearAim();
             IsRunning = false;
             locomotionVelocity = Vector3.zero;
-            characterController.SimpleMove(Vector3.zero);
+            MoveWithGrounding(Vector3.zero);
             return;
         }
 
@@ -149,7 +182,7 @@ public class PlayerMovement : MonoBehaviour
             normalMovement = true;
         }
 
-        characterController.SimpleMove(currentVelocity);
+        MoveWithGrounding(currentVelocity);
         if (normalMovement && (characterController.collisionFlags & CollisionFlags.Sides) != 0)
         {
             // Do not accumulate hidden momentum while pressed against a wall.
@@ -161,6 +194,34 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 ReadMoveDirection()
     {
         Vector2 input = moveAction.ReadValue<Vector2>();
+
+        if (cameraRelativeMovement && movementReference != null)
+        {
+            float magnitude = Mathf.Clamp01(input.magnitude);
+            if (magnitude <= .05f)
+            {
+                hasMovementHeading = false;
+                return Vector3.zero;
+            }
+
+            Vector2 inputDirection = input.normalized;
+            if (!hasMovementHeading || Vector2.Angle(capturedInputDirection, inputDirection) >= inputDirectionChangeAngle)
+            {
+                Vector3 forward = Vector3.ProjectOnPlane(movementReference.forward, Vector3.up).normalized;
+                // Avoid a degenerate reference if someone authors a vertical camera later.
+                if (forward.sqrMagnitude < .001f)
+                    forward = Vector3.ProjectOnPlane(movementReference.up, Vector3.up).normalized;
+                if (forward.sqrMagnitude < .001f) forward = Vector3.forward;
+                Vector3 right = Vector3.Cross(Vector3.up, forward);
+                capturedWorldDirection = (right * inputDirection.x + forward * inputDirection.y).normalized;
+                capturedInputDirection = inputDirection;
+                hasMovementHeading = true;
+            }
+
+            // Never re-project a held key through an auto-rotating camera every frame:
+            // that feedback loop would continually turn D/A/S into a circular path.
+            return capturedWorldDirection * magnitude;
+        }
 
         Vector3 direction = new Vector3(
             input.x,
@@ -188,9 +249,12 @@ public class PlayerMovement : MonoBehaviour
                 RotateTowards(moveDirection);
         }
 
-        IsRunning =
-            runAction.IsPressed() &&
-            moveDirection.sqrMagnitude > 0.01f;
+        bool held=runAction.IsPressed();
+        if(!held)sprintNeedsRelease=false;
+        bool wantsSprint=held&&!sprintNeedsRelease&&moveDirection.sqrMagnitude>.01f;
+        IsRunning=wantsSprint&&(IsRunning?playerEnergy.CurrentEnergy>0:playerEnergy.CanStartSprint);
+        if(IsRunning&&!playerEnergy.ConsumeSprintEnergy(Time.deltaTime))
+        {IsRunning=false;sprintNeedsRelease=true;}
 
         return UpdateLocomotionVelocity(moveDirection, IsRunning, Time.deltaTime);
     }
@@ -198,10 +262,40 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 UpdateLocomotionVelocity(Vector3 direction, bool sprinting, float deltaTime)
     {
         Vector3 targetVelocity = Vector3.ClampMagnitude(direction, 1f) * (sprinting ? SprintSpeed : RunSpeed);
-        float rate = targetVelocity.sqrMagnitude < locomotionVelocity.sqrMagnitude ||
-                     Vector3.Dot(locomotionVelocity, targetVelocity) < 0f ? deceleration : acceleration;
-        locomotionVelocity = Vector3.MoveTowards(locomotionVelocity, targetVelocity, rate * Mathf.Max(0f, deltaTime));
+        float currentSpeed=locomotionVelocity.magnitude,targetSpeed=targetVelocity.magnitude;
+        float speed=Mathf.MoveTowards(currentSpeed,targetSpeed,(targetSpeed<currentSpeed?deceleration:acceleration)*Mathf.Max(0,deltaTime));
+        // Change travel direction immediately; blend speed and the visual facing separately.
+        // Reversing no longer brakes through a long zero-speed slide.
+        Vector3 heading=targetSpeed>.001f?targetVelocity/targetSpeed:locomotionVelocity.normalized;
+        locomotionVelocity=heading*speed;
         return locomotionVelocity;
+    }
+
+    private void MoveWithGrounding(Vector3 velocity)
+    {
+        if(!characterController.enabled||Time.deltaTime<=0)return;
+        float dt=Time.deltaTime;
+        bool grounded=characterController.isGrounded;
+        if(grounded){lastGroundedAt=Time.time;verticalSpeed=-groundStickSpeed;}
+        else verticalSpeed=Mathf.Max(verticalSpeed-gravity*dt,-45f);
+        Vector3 step=new Vector3(velocity.x,0,velocity.z)*dt;
+        Vector3 feet=transform.TransformPoint(characterController.center)-Vector3.up*(characterController.height*transform.lossyScale.y*.5f);
+        float probeUp=characterController.stepOffset+.15f;
+        Vector3 probe=feet+step+Vector3.up*probeUp;
+        float vertical=verticalSpeed*dt;
+        if(Physics.Raycast(probe,Vector3.down,out var ground,probeUp+groundSnapDistance,groundLayers,QueryTriggerInteraction.Ignore)&&
+            ground.normal.y>=Mathf.Cos(characterController.slopeLimit*Mathf.Deg2Rad))
+        {
+            float gap=feet.y-ground.point.y;
+            // Follow nearby stairs/slopes only. Larger drops retain real gravity.
+            if((grounded||Time.time-lastGroundedAt<.1f||Mathf.Abs(gap)<.12f)&&
+               gap<=groundSnapDistance&&gap>=-characterController.stepOffset-.05f)
+            {vertical=-gap-.02f;verticalSpeed=-groundStickSpeed;}
+        }
+        // One Move per frame keeps CharacterController.velocity useful to animation and camera.
+        CollisionFlags flags=characterController.Move(step+Vector3.up*vertical);
+        if((flags&CollisionFlags.Below)!=0){lastGroundedAt=Time.time;verticalSpeed=-groundStickSpeed;}
+        if((flags&CollisionFlags.Above)!=0)verticalSpeed=Mathf.Min(0,verticalSpeed);
     }
 
     private void StartDash(Vector3 requestedDirection)
@@ -300,5 +394,7 @@ public class PlayerMovement : MonoBehaviour
         if (combatFacing != null) combatFacing.ClearAim();
         locomotionVelocity = Vector3.zero;
         IsRunning = false;
+        hasMovementHeading = false;
+        verticalSpeed=0;
     }
 }

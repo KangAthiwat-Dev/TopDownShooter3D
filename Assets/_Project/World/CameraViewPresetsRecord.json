@@ -1,0 +1,32 @@
+{
+    "backup": "Logs/SceneBackups/WorldPrototype_BeforeViewPresets_20261026_190953.unity",
+    "retainedThirdPerson": {
+        "localPosition": {
+            "x": 0.0,
+            "y": 6.0,
+            "z": -8.0
+        },
+        "localEulerAngles": {
+            "x": 36.86990737915039,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "rigEulerAngles": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "targetOffset": {
+            "x": 0.0,
+            "y": 1.350000023841858,
+            "z": 0.0
+        },
+        "fieldOfView": 55.0,
+        "nearClipPlane": 0.10000000149011612,
+        "followMovementHeading": true,
+        "alignBehindPlayerOnStart": true,
+        "cameraRelativeMovement": true,
+        "avoidSolidObstacles": true
+    },
+    "preservedComponents": 17097
+}

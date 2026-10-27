@@ -9,6 +9,7 @@ public class InventorySlotUI : MonoBehaviour, ISelectHandler
     [SerializeField] private Button button;
     [SerializeField] private Image frame, background, icon;
     [SerializeField] private TMP_Text glyph, itemName, quantity, status;
+    [SerializeField] private Sprite emptyFrameSprite,selectedFrameSprite;
     private Action<int> select;
     private int slotIndex;
     public Button Button => button;
@@ -24,10 +25,16 @@ public class InventorySlotUI : MonoBehaviour, ISelectHandler
     public void Show(string title, Sprite sprite, string mark, string count, string state, bool selected, bool melee)
     {
         Color accent = melee ? new Color(1f, 0.76f, 0.32f) : new Color(0.35f, 0.8f, 0.85f);
-        frame.color = selected ? accent : new Color(0.23f, 0.29f, 0.35f);
-        background.color = selected ? new Color(0.10f, 0.17f, 0.21f) : new Color(0.052f, 0.074f, 0.1f);
+        bool themed=emptyFrameSprite!=null;
+        if(themed){frame.sprite=selected&&selectedFrameSprite!=null?selectedFrameSprite:emptyFrameSprite;frame.color=Color.white;background.color=Color.clear;}
+        else {frame.color = selected ? accent : new Color(0.23f, 0.29f, 0.35f);background.color = selected ? new Color(0.10f, 0.17f, 0.21f) : new Color(0.052f, 0.074f, 0.1f);}
         icon.sprite = sprite; icon.gameObject.SetActive(sprite != null);
         glyph.text = mark; glyph.color = accent; glyph.gameObject.SetActive(sprite == null);
         itemName.text = title; quantity.text = count; status.text = state; status.color = accent;
+        if(themed)
+        {
+            Color text=selected?new Color(.19f,.11f,.055f):new Color(1f,.91f,.73f);
+            itemName.color=quantity.color=status.color=glyph.color=text;
+        }
     }
 }

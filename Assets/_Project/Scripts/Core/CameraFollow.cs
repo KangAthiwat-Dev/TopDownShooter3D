@@ -9,6 +9,16 @@ public class CameraFollow : MonoBehaviour
     [Header("Follow Settings")]
     [SerializeField, Min(0.01f)] private float smoothTime = 0.1f;
 
+    [Header("Movement-Directed Orbit")]
+    [Tooltip("Orbit behind actual walking/running velocity, never the player's aiming rotation. Off preserves older scenes.")]
+    [SerializeField] private bool followMovementHeading;
+    [SerializeField] private bool alignBehindTargetOnStart;
+    [SerializeField, Min(.01f)] private float headingSmoothTime = .4f;
+    [SerializeField, Min(1f)] private float maxHeadingSpeed = 110f;
+    [SerializeField, Min(.01f)] private float minimumHeadingSpeed = .8f;
+    [SerializeField, Min(0f)] private float headingConfirmTime = .12f;
+    [SerializeField, Range(0f, 45f)] private float headingDeadZone = 7f;
+
     [Header("Running Bob")]
     [SerializeField] private Camera targetCamera;
     [SerializeField] private PlayerMovement playerMovement;
@@ -24,8 +34,26 @@ public class CameraFollow : MonoBehaviour
     private Quaternion cameraRestRotation;
     private float bobPhase;
     private float bobWeight;
+    private bool hasRestPose;
+    private Quaternion rigRestRotation;
+    private float restViewYaw;
+    private float orbitYaw;
+    private float desiredOrbitYaw;
+    private float headingVelocity;
+    private float candidateYaw;
+    private float candidateTime;
+    private bool hasCandidate;
+
+    public bool FollowsMovementHeading => followMovementHeading;
+    public Camera FollowCamera => targetCamera;
 
     private void Awake()
+    {
+        ResolveReferences();
+        CaptureViewPose();
+    }
+
+    private void ResolveReferences()
     {
         if (targetCamera == null)
         {
@@ -42,11 +70,52 @@ public class CameraFollow : MonoBehaviour
             playerController = playerMovement.GetComponent<CharacterController>();
         }
 
+    }
+
+    private void CaptureViewPose()
+    {
         if (targetCamera != null)
         {
             cameraRestPosition = targetCamera.transform.localPosition;
             cameraRestRotation = targetCamera.transform.localRotation;
+            hasRestPose = true;
+            if (followMovementHeading && alignBehindTargetOnStart && target != null)
+            {
+                Vector3 viewHeading = Vector3.ProjectOnPlane(transform.position - targetCamera.transform.position, Vector3.up);
+                Vector3 playerHeading = Vector3.ProjectOnPlane(target.forward, Vector3.up);
+                if (viewHeading.sqrMagnitude > .001f && playerHeading.sqrMagnitude > .001f)
+                    transform.rotation = Quaternion.AngleAxis(Vector3.SignedAngle(viewHeading, playerHeading, Vector3.up), Vector3.up) * transform.rotation;
+            }
         }
+
+        rigRestRotation = transform.rotation;
+        // Align the camera-to-pivot offset, not a particular assumed child-camera yaw.
+        // Rotating the parent about world Y preserves the authored height, pitch and distance.
+        Vector3 behind = targetCamera != null
+            ? Vector3.ProjectOnPlane(transform.position - targetCamera.transform.position, Vector3.up)
+            : Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        if (behind.sqrMagnitude < .0001f) behind = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        restViewYaw = Mathf.Atan2(behind.x, behind.z) * Mathf.Rad2Deg;
+        orbitYaw = desiredOrbitYaw = headingVelocity = candidateYaw = candidateTime = 0f;
+        hasCandidate = false;
+    }
+
+    public void ApplyViewPose(Vector3 localPosition, Quaternion localRotation, Quaternion rigRotation,
+        Vector3 offset, bool orbitWithMovement, bool initiallyBehindPlayer)
+    {
+        ResolveReferences();
+        ResetRunningBob();
+        followMovementHeading = orbitWithMovement;
+        alignBehindTargetOnStart = initiallyBehindPlayer;
+        targetOffset = offset;
+        transform.rotation = rigRotation;
+        if (targetCamera != null)
+        {
+            targetCamera.transform.localPosition = localPosition;
+            targetCamera.transform.localRotation = localRotation;
+        }
+        CaptureViewPose();
+        SnapToTarget();
     }
 
     private void Start()
@@ -62,6 +131,8 @@ public class CameraFollow : MonoBehaviour
             return;
         }
 
+        if (Time.timeScale <= 0f || Time.deltaTime <= 0f) return;
+
         Vector3 targetPosition = target.position + targetOffset;
 
         transform.position = Vector3.SmoothDamp(
@@ -71,7 +142,43 @@ public class CameraFollow : MonoBehaviour
             smoothTime
         );
 
+        UpdateMovementHeading(Time.deltaTime);
         UpdateRunningBob(Time.deltaTime);
+    }
+
+    private void UpdateMovementHeading(float deltaTime)
+    {
+        if (!followMovementHeading) return;
+        Vector3 velocity = playerController != null && playerController.enabled
+            ? Vector3.ProjectOnPlane(playerController.velocity, Vector3.up) : Vector3.zero;
+        bool locomotion = playerMovement != null && playerMovement.isActiveAndEnabled &&
+            !playerMovement.IsDashing && !playerMovement.IsShadowDashing && !playerMovement.IsInteractionLocked &&
+            velocity.sqrMagnitude >= minimumHeadingSpeed * minimumHeadingSpeed;
+
+        if (locomotion)
+        {
+            float yaw = Mathf.Atan2(velocity.x, velocity.z) * Mathf.Rad2Deg - restViewYaw;
+            if (!hasCandidate || Mathf.Abs(Mathf.DeltaAngle(candidateYaw, yaw)) > headingDeadZone)
+            {
+                candidateYaw = yaw;
+                candidateTime = 0f;
+                hasCandidate = true;
+            }
+            else candidateTime += deltaTime;
+
+            if (candidateTime >= headingConfirmTime && Mathf.Abs(Mathf.DeltaAngle(desiredOrbitYaw, candidateYaw)) > headingDeadZone)
+                desiredOrbitYaw = candidateYaw;
+        }
+        else
+        {
+            // Tiny taps, dashes and collisions do not replace the last stable walking heading.
+            hasCandidate = false;
+            candidateTime = 0f;
+        }
+
+        orbitYaw = Mathf.SmoothDampAngle(orbitYaw, desiredOrbitYaw, ref headingVelocity,
+            Mathf.Max(.01f, headingSmoothTime), Mathf.Max(1f, maxHeadingSpeed), deltaTime);
+        transform.rotation = Quaternion.AngleAxis(orbitYaw, Vector3.up) * rigRestRotation;
     }
 
     private void UpdateRunningBob(float deltaTime)
@@ -129,7 +236,7 @@ public class CameraFollow : MonoBehaviour
         bobPhase = 0f;
         bobWeight = 0f;
 
-        if (targetCamera != null)
+        if (targetCamera != null && hasRestPose)
         {
             targetCamera.transform.localPosition = cameraRestPosition;
             targetCamera.transform.localRotation = cameraRestRotation;
@@ -149,5 +256,6 @@ public class CameraFollow : MonoBehaviour
         }
 
         transform.position = target.position + targetOffset;
+        followVelocity = Vector3.zero;
     }
 }

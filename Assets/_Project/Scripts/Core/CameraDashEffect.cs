@@ -14,6 +14,13 @@ public class CameraDashEffect : MonoBehaviour
 
     private float normalFov;
 
+    public void SetBaseFieldOfView(float value)
+    {
+        normalFov = value;
+        if (targetCamera == null) targetCamera = GetComponentInChildren<Camera>();
+        if (targetCamera != null) targetCamera.fieldOfView = normalFov;
+    }
+
     private void Awake()
     {
         if (targetCamera == null)

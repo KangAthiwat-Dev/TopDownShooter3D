@@ -19,6 +19,8 @@ public class PlayerAttackController : MonoBehaviour
     private float attackInterval = 0.35f;
     [SerializeField, Min(0.05f), Tooltip("Rifle cadence only; melee keeps its existing animation timing.")]
     private float rangedAttackInterval = 0.18f;
+    [SerializeField,Min(1)] private int burstSize=3;
+    [SerializeField,Min(.1f)] private float burstRecovery=.8f;
 
     [Header("Runtime")]
     [SerializeField]
@@ -38,9 +40,14 @@ public class PlayerAttackController : MonoBehaviour
 
     private InputAction attackAction;
     private float attackCooldownRemaining;
+    private int shotsInBurst;
 
     public AttackMode CurrentMode => currentMode;
-    public float RangedAttackInterval => Mathf.Max(0.05f, rangedAttackInterval);
+    public float FireRateMultiplier { get; set; } = 1f;
+    public float RangedAttackInterval => Mathf.Max(0.06f, rangedAttackInterval/Mathf.Max(1,FireRateMultiplier));
+    public float BurstRecovery => Mathf.Max(.2f,burstRecovery/Mathf.Max(1,FireRateMultiplier));
+    public int BurstSize => Mathf.Max(1,burstSize);
+    public int ShotsInBurst => shotsInBurst;
     public bool IsAttackHeld => isActiveAndEnabled && attackAction != null &&
         (inputGate != null ? inputGate.IsHeld(attackAction) : attackAction.IsPressed());
 
@@ -100,6 +107,7 @@ public class PlayerAttackController : MonoBehaviour
             currentMode = AttackMode.None;
             currentAttackTarget = null;
             CancelPendingShot();
+            InterruptBurst();
             return;
         }
 
@@ -115,6 +123,7 @@ public class PlayerAttackController : MonoBehaviour
         if (!IsAttackHeld)
         {
             CancelPendingShot();
+            InterruptBurst();
             return;
         }
 
@@ -126,6 +135,7 @@ public class PlayerAttackController : MonoBehaviour
         if (currentAttackTarget == null)
         {
             CancelPendingShot();
+            InterruptBurst();
             return;
         }
 
@@ -156,6 +166,7 @@ public class PlayerAttackController : MonoBehaviour
         if (currentMode == AttackMode.Melee)
         {
             CancelPendingShot();
+            InterruptBurst();
             Debug.Log(
                 $"Melee attack requested: " +
                 $"{currentAttackTarget.name}"
@@ -178,7 +189,9 @@ public class PlayerAttackController : MonoBehaviour
 
     internal void ConfirmRangedShot(Targetable target)
     {
-        attackCooldownRemaining = RangedAttackInterval;
+        shotsInBurst++;
+        if(shotsInBurst>=BurstSize){shotsInBurst=0;attackCooldownRemaining=BurstRecovery;}
+        else attackCooldownRemaining = RangedAttackInterval;
         RangedShotFired?.Invoke(target);
     }
 
@@ -190,7 +203,14 @@ public class PlayerAttackController : MonoBehaviour
     private void OnDisable()
     {
         CancelPendingShot();
+        InterruptBurst();
         currentAttackTarget = null;
         currentMode = AttackMode.None;
+    }
+
+    private void InterruptBurst()
+    {
+        if(shotsInBurst>0)attackCooldownRemaining=Mathf.Max(attackCooldownRemaining,BurstRecovery);
+        shotsInBurst=0;
     }
 }

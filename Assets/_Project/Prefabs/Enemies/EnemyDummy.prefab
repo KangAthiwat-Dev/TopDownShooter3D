@@ -132,7 +132,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHealth: 100
-  disableOnDeath: 1
+  allowInstantKill: 1
+  experienceReward: 0
 --- !u!114 &3070804076802957579
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -146,6 +147,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Targetable
   aimPoint: {fileID: 5042804497015621571}
+  closeRangeOffset: 0
 --- !u!1 &8563135365379495699
 GameObject:
   m_ObjectHideFlags: 0

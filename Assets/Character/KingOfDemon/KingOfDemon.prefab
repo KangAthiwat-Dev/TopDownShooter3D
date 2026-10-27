@@ -1,0 +1,139 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &605549278162439873
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2.0235603
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2.0235603
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2.0235603
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_Name
+      value: KingOfDemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: a135d653c9e49d04fb96c9c536542146, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6515712193588681746, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.027703833
+      objectReference: {fileID: 0}
+    - target: {fileID: 6515712193588681746, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.00394724
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7521257586697496865}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1323965528844378711}
+  m_SourcePrefab: {fileID: 100100000, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+--- !u!1 &335023451445195664 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 91bf55ac14a6ee04eaf81c76b5b3de6b, type: 3}
+  m_PrefabInstance: {fileID: 605549278162439873}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7521257586697496865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 335023451445195664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1a5725342e6b1648ba73e9ae030e318, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossVFXController
+  chargePrefab: {fileID: 8196889932502379508, guid: a50934d3a4a9fcd44bc49c4825274d9d, type: 3}
+  fireballPrefab: {fileID: 4475592316333136714, guid: a8e19abae5be7434cbef070047756418, type: 3}
+  shockwavePrefab: {fileID: 7332442550511657848, guid: eeac5460c855a014bb3042b85f2181f9, type: 3}
+  powerAuraPrefab: {fileID: 959376897160568611, guid: 7bf1b8a8a52236040877dae98b6d5840, type: 3}
+  slashPrefab: {fileID: 7554578338353738327, guid: af12275cd24fd0a4a975bf8d4c4a5a8d, type: 3}
+  deathBurstPrefab: {fileID: 7480735567326385691, guid: e9fe120304aad9945b799fa5557ee56d, type: 3}
+  rightHand: {fileID: 0}
+  leftHand: {fileID: 0}
+  chest: {fileID: 0}
+  fireballSpeed: 14
+  fireballDamage: 25
+  shockwaveRadius: 7
+  shockwaveDamage: 20
+  damageMethod: TakeDamage
+--- !u!114 &1323965528844378711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 335023451445195664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9153fb4b0ee64a43abc4d8d67cbbc22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossSkillTester
+  autoCycle: 0
+  cycleInterval: 4
+  timeScale: 1

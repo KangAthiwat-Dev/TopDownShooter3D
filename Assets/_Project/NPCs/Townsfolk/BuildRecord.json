@@ -1,0 +1,26 @@
+{
+    "backup": "Logs/SceneBackups/WorldPrototype_BeforeTownsfolk_20261026_165254.unity",
+    "files": [
+        "Assets/_Project/Art/ThirdParty/Quaternius/UAL1/UAL1_Standard.fbx",
+        "Assets/_Project/Art/ThirdParty/Quaternius/UAL1/UAL1_Standard.fbx.meta",
+        "Assets/_Project/NPCs/WeaponMerchant/NPC_WeaponMerchant.prefab",
+        "Assets/_Project/Art/ThirdParty/Quaternius/Modular Character Outfits/Exports/FBX (Unity)/Outfits/Male_Peasant.fbx",
+        "Assets/_Project/Art/ThirdParty/Quaternius/Universal Base Characters/Base Characters/Unity/Superhero_Male_FullBody.fbx",
+        "Assets/_Project/Art/ThirdParty/Quaternius/Universal Base Characters/Hairstyles/Rigged to Head Bone/FBX (Unity)/Hair_SimpleParted.fbx",
+        "Assets/_Project/Prefabs/Player/HumanMalePlayerVisual.prefab",
+        "Assets/_Project/Animations/Player/PlayerAnimator.controller"
+    ],
+    "hashes": [
+        "21B32D912DA3CB93426D974FB945E86F5B2E86970ACD2CE89905E0FBF9F1DCC2",
+        "B5EB576A61E15A250392C6D198CDFE7F58E6F036C9A5D4FD55602A1C1E81D068",
+        "67A1E0F33C94019323C9D328292C0FFE3FC6F94039255D250677CA4B7E589BC5",
+        "D083F08A910C739B5A337207E4B6112F70C1235CDC3891C314BA26357C5F4965",
+        "79344418D754A59730B79D1874752E9592143DB34ABE8ADF138FA9A92A4768E9",
+        "5E98ACD3561C814127326FDC78E74F20DFA1C3397760006D17EBAEA4C8D7A24D",
+        "62F556D23257A86A7993828EABD88B9530E32BD22C9F33FB91FD4831594A63BA",
+        "223BDC3E73DD7F7FC012D54937345770909F35BC9B13A7E620BBA52484760DF8"
+    ],
+    "preservedComponents": 17037,
+    "cityPoints": 21,
+    "outsidePoints": 5
+}

@@ -1,13 +1,22 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
 
 public enum EnemyAwarenessState { Patrol, Chase, Investigate, Search, Return }
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyAI : MonoBehaviour
 {
+    private static readonly List<EnemyAI> activeEnemies = new List<EnemyAI>();
+    public static IReadOnlyList<EnemyAI> ActiveEnemies => activeEnemies;
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetRegistry() => activeEnemies.Clear();
     [Header("Target")]
     [SerializeField] private Transform target;
+    [SerializeField] private bool huntCivilians = true;
+    [SerializeField, Min(.05f)] private float civilianScanInterval = .35f;
+    private Transform playerTarget;
+    private float nextCivilianScan;
 
     [Header("Sight (solid colliders block vision; triggers do not)")]
     [Min(0.1f)] [SerializeField] private float detectionRange = 12f;
@@ -56,6 +65,7 @@ public class EnemyAI : MonoBehaviour
     public bool IsInAttackRange { get; private set; }
     public Transform Target => target;
     private bool AgentReady => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+    private void OnEnable() { if (!activeEnemies.Contains(this)) activeEnemies.Add(this); }
 
     private void Awake()
     {
@@ -82,7 +92,13 @@ public class EnemyAI : MonoBehaviour
     private void Update()
     {
         if (Time.timeScale <= 0f || !AgentReady) return;
+        if (target != null && !IsLivingTarget(target)) { target = null; EnterState(EnemyAwarenessState.Patrol); }
         if (target == null && Time.time >= nextPlayerLookup) FindPlayer();
+        if (huntCivilians && CivilianHealth.Living.Count > 0 && Time.time >= nextCivilianScan)
+        {
+            nextCivilianScan = Time.time + civilianScanInterval;
+            SelectVisibleVictim();
+        }
 
         CanSeeTarget = HasVisualContact();
         IsInAttackRange = false;
@@ -214,19 +230,21 @@ public class EnemyAI : MonoBehaviour
     private bool ReachedDestination() => !hasDestination || (!agent.pathPending &&
         (!agent.hasPath || agent.remainingDistance <= agent.stoppingDistance + 0.15f));
 
-    private bool HasVisualContact()
+    private bool HasVisualContact() => HasVisualContact(target, HasTargetMemory);
+
+    private bool HasVisualContact(Transform candidate, bool remembered)
     {
-        if (target == null || !target.gameObject.activeInHierarchy) return false;
-        Vector3 toTarget = target.position - transform.position;
-        float range = HasTargetMemory ? Mathf.Max(detectionRange, loseTargetRange) : detectionRange;
+        if (!IsLivingTarget(candidate)) return false;
+        Vector3 toTarget = candidate.position - transform.position;
+        float range = remembered ? Mathf.Max(detectionRange, loseTargetRange) : detectionRange;
         if (toTarget.sqrMagnitude > range * range) return false;
         toTarget.y = 0f;
         if (toTarget.sqrMagnitude > 0.001f && Vector3.Angle(transform.forward, toTarget) > fieldOfView * 0.5f)
             return false;
 
         Vector3 eye = transform.position + Vector3.up * eyeHeight;
-        var controller = target.GetComponent<CharacterController>();
-        Vector3 chest = controller != null && controller.enabled ? controller.bounds.center : target.position + Vector3.up;
+        var controller = candidate.GetComponent<CharacterController>();
+        Vector3 chest = controller != null && controller.enabled ? controller.bounds.center : candidate.position + Vector3.up;
         Vector3 ray = chest - eye;
         int count = Physics.RaycastNonAlloc(eye, ray.normalized, sightHits, ray.magnitude, sightBlockers, QueryTriggerInteraction.Ignore);
         // In dense scenes a full buffer must not silently omit a blocker.
@@ -236,7 +254,7 @@ public class EnemyAI : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             Transform hit = hits[i].collider.transform;
-            if (hit == target || hit.IsChildOf(target) || hit == transform || hit.IsChildOf(transform)) continue;
+            if (hit == candidate || hit.IsChildOf(candidate) || hit == transform || hit.IsChildOf(transform)) continue;
             // Enemies do not blind each other; solid world geometry does.
             if (hits[i].collider.GetComponentInParent<EnemyAI>() != null) continue;
             return false;
@@ -260,9 +278,44 @@ public class EnemyAI : MonoBehaviour
     private void FindPlayer()
     {
         nextPlayerLookup = Time.time + 0.5f;
-        if (target != null) return;
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null) target = player.transform;
+        // Respect explicitly assigned non-civilian targets (including test proxies).
+        if (playerTarget == null && target != null && target.GetComponent<CivilianHealth>() == null) playerTarget = target;
+        if (playerTarget == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null) playerTarget = player.transform;
+        }
+        if (target == null && IsLivingTarget(playerTarget)) target = playerTarget;
+    }
+
+    private static bool IsLivingTarget(Transform candidate)
+    {
+        if (candidate == null || !candidate.gameObject.activeInHierarchy) return false;
+        var damageable = candidate.GetComponent<IDamageable>();
+        return damageable == null || damageable.IsAlive;
+    }
+
+    private void SelectVisibleVictim()
+    {
+        // Visible player has priority. Never inherit another victim's memory/range.
+        if (HasVisualContact(playerTarget, target == playerTarget && HasTargetMemory)) { ChangeVictim(playerTarget); return; }
+        if (HasTargetMemory && IsLivingTarget(target)) return;
+        CivilianHealth best = null; float distance = detectionRange * detectionRange;
+        foreach (var citizen in CivilianHealth.Living)
+        {
+            if (citizen == null || !citizen.IsAlive || !citizen.isActiveAndEnabled) continue;
+            float d = (citizen.transform.position - transform.position).sqrMagnitude;
+            if (d < distance && HasVisualContact(citizen.transform, false)) { best = citizen; distance = d; }
+        }
+        if (best != null) ChangeVictim(best.transform);
+    }
+
+    private void ChangeVictim(Transform candidate)
+    {
+        if (candidate == target) return;
+        target = candidate;
+        IsInAttackRange = false; CanSeeTarget = false;
+        EnterState(EnemyAwarenessState.Patrol);
     }
 
     private void StopMoving()
@@ -289,6 +342,7 @@ public class EnemyAI : MonoBehaviour
 
     private void OnDisable()
     {
+        activeEnemies.Remove(this);
         IsInAttackRange = false;
         CanSeeTarget = false;
         StopMoving();

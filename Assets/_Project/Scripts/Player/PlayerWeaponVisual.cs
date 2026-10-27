@@ -19,6 +19,7 @@ public class PlayerWeaponVisual : MonoBehaviour
     private PlayerInteractor playerInteractor;
     private PlayerMovement playerMovement;
     private PlayerDashVisual dashVisual;
+    private PlayerHealth health;
 
     private void Awake()
     {
@@ -27,6 +28,7 @@ public class PlayerWeaponVisual : MonoBehaviour
         playerInteractor = GetComponent<PlayerInteractor>();
         playerMovement = GetComponent<PlayerMovement>();
         dashVisual = GetComponent<PlayerDashVisual>();
+        health = GetComponent<PlayerHealth>();
         if (playerTargeting == null)
         {
             playerTargeting =
@@ -85,6 +87,13 @@ public class PlayerWeaponVisual : MonoBehaviour
 
     private void RefreshWeaponState()
     {
+        if (health != null && !health.IsAlive)
+        {
+            SetWeaponState(false);
+            if(equipment!=null){equipment.SetWeaponDrawn(false);equipment.SetWeaponVisible(false);}
+            if(animationController!=null)animationController.SetHasMeleeWeapon(false);
+            return;
+        }
         // Keep the current gun/back-weapon presentation until the wind covers
         // it. Attack eligibility still uses the real Movement Dash state.
         if (dashVisual != null && dashVisual.IsShadowWindEntering) return;

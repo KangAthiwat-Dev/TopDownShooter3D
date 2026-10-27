@@ -18,16 +18,22 @@ public class PlayerEnergy : MonoBehaviour
 
     [SerializeField, Min(0f)]
     private float minimumEnergyToStart = 10f;
+    [SerializeField, Min(0f)] private float sprintDrainPerSecond = 18f;
+    [SerializeField, Min(0f)] private float minimumEnergyToSprint = 8f;
 
     private float lastConsumeTime;
+    private float bonusEnergy, shadowDrainMultiplier = 1f;
 
-    public float MaxEnergy => maxEnergy;
+    public float MaxEnergy => maxEnergy + bonusEnergy;
+    public float SprintDrainPerSecond => sprintDrainPerSecond;
+    public float ShadowDrainPerSecond => shadowDashDrainPerSecond * shadowDrainMultiplier;
+    public bool CanStartSprint => CurrentEnergy >= minimumEnergyToSprint;
 
     public float CurrentEnergy { get; private set; }
 
     public float NormalizedEnergy =>
-        maxEnergy > 0f
-            ? CurrentEnergy / maxEnergy
+        MaxEnergy > 0f
+            ? CurrentEnergy / MaxEnergy
             : 0f;
 
     public bool CanStartShadowDash =>
@@ -38,8 +44,18 @@ public class PlayerEnergy : MonoBehaviour
 
     private void Awake()
     {
-        CurrentEnergy = maxEnergy;
+        CurrentEnergy = MaxEnergy;
     }
+
+    public void ConfigureUpgrades(float bonus,float formDrainMultiplier)
+    {
+        float previousMax=MaxEnergy;bonus=Mathf.Max(0,bonus);formDrainMultiplier=Mathf.Clamp(formDrainMultiplier,.1f,1f);
+        if(Mathf.Approximately(bonusEnergy,bonus)&&Mathf.Approximately(shadowDrainMultiplier,formDrainMultiplier))return;
+        bonusEnergy=bonus;shadowDrainMultiplier=formDrainMultiplier;
+        CurrentEnergy=Mathf.Clamp(CurrentEnergy+Mathf.Max(0,MaxEnergy-previousMax),0,MaxEnergy);
+        EnergyChanged?.Invoke(CurrentEnergy,MaxEnergy);
+    }
+    public bool ConsumeSprintEnergy(float deltaTime)=>Consume(sprintDrainPerSecond,deltaTime);
 
     private void Update()
     {
@@ -61,6 +77,9 @@ public class PlayerEnergy : MonoBehaviour
     public bool ConsumeShadowDashEnergy(
         float deltaTime
     )
+    { return Consume(ShadowDrainPerSecond,deltaTime); }
+
+    private bool Consume(float drain,float deltaTime)
     {
         if (CurrentEnergy <= 0f)
         {
@@ -71,7 +90,7 @@ public class PlayerEnergy : MonoBehaviour
 
         SetEnergy(
             CurrentEnergy -
-            shadowDashDrainPerSecond *
+            drain *
             deltaTime
         );
 
@@ -83,7 +102,7 @@ public class PlayerEnergy : MonoBehaviour
         float clampedEnergy = Mathf.Clamp(
             newEnergy,
             0f,
-            maxEnergy
+            MaxEnergy
         );
 
         if (Mathf.Approximately(
@@ -98,7 +117,7 @@ public class PlayerEnergy : MonoBehaviour
 
         EnergyChanged?.Invoke(
             CurrentEnergy,
-            maxEnergy
+            MaxEnergy
         );
     }
 }

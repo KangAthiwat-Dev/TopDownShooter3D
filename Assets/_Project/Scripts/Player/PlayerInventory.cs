@@ -17,15 +17,16 @@ public class PlayerInventory : MonoBehaviour
         get { int total = 0; for (int i = 0; i < Capacity; i++) if (items[i] != null) total++; return total; }
     }
 
-    public bool CanAdd(ItemDefinition item, int amount = 1)
+    public int SpaceFor(ItemDefinition item)
     {
-        if (item == null || amount <= 0) return false;
+        if (item == null) return 0;
         long space = 0;
         for (int i = 0; i < Capacity; i++)
             if (items[i] == null) space += item.MaxStack;
             else if (items[i] == item) space += Mathf.Max(0, item.MaxStack - quantities[i]);
-        return space >= amount;
+        return (int)Math.Min(space, int.MaxValue);
     }
+    public bool CanAdd(ItemDefinition item, int amount = 1) => amount > 0 && SpaceFor(item) >= amount;
     public bool TryAdd(ItemDefinition item, int amount = 1)
     {
         // Atomic: a rejected pickup must never consume part of a world item.
