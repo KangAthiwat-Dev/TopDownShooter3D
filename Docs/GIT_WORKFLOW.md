@@ -1,5 +1,17 @@
 # Git และ Git LFS สำหรับโปรเจกต์นี้
 
+## บันทึก EverwoodTheSummonedHero และการเตรียม build
+
+รันจากโฟลเดอร์โปรเจกต์ปัจจุบัน `TopDownShooter3D` บน branch `main`:
+
+```sh
+git add -A
+git commit -m "chore: rename game to EverwoodTheSummonedHero and prepare desktop builds"
+git push origin main
+```
+
+คำสั่งนี้รวมการลบ assets ที่ไม่ได้ใช้ตามงาน cleanup ด้วย ส่วนไฟล์เกมใน `Builds/` และไฟล์สำรองใน `Logs/` ถูก ignore จึงไม่ถูกอัปโหลดไปกับ source code
+
 ## ตั้งค่าแล้วบนเครื่องปัจจุบัน
 
 - ติดตั้ง Git LFS ผ่าน Homebrew และเปิดใช้ด้วย `git lfs install --local`

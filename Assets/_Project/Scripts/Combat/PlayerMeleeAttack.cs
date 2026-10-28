@@ -38,6 +38,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     public event Action<bool> SwingCommitted;
 
     public bool IsAttacking => attackInProgress;
+    public bool IsWeaponAttack => attackInProgress && activeWeaponAttack;
+    public int AttackSequence { get; private set; }
 
     // เก็บไว้ใช้ต่อกับเสียง, VFX และ Animation ในอนาคต
     public event Action<Targetable> MeleeHitConfirmed;
@@ -145,6 +147,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         attackInProgress = true;
+        AttackSequence++;
         activeDamage = weapon != null ? weapon.Damage : unarmedDamage;
         activeWeaponAttack = weapon != null;
         hitSettings = skills != null ? skills.HitSettings : default;

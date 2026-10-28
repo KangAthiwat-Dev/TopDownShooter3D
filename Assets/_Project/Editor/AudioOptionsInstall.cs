@@ -104,7 +104,7 @@ public static partial class AudioOptionsSetup
         foreach(var ui in root.GetComponentsInChildren<UIAudioFeedback>(true)){Route(Field(ui,"windows") as AudioSource,GameAudioBus.UI);Route(Field(ui,"hover") as AudioSource,GameAudioBus.UI);}
         foreach(var city in root.GetComponentsInChildren<TownMusicZone>(true))Route(Field(city,"music") as AudioSource,GameAudioBus.Music);
         foreach(var ambient in root.GetComponentsInChildren<WorldAmbientAudio>(true))
-        {Route(Field(ambient,"forestSource") as AudioSource,GameAudioBus.Ambience);Route(Field(ambient,"villageSource") as AudioSource,GameAudioBus.Ambience);Route(Field(ambient,"adventureSource") as AudioSource,GameAudioBus.Music);}
+        {Route(Field(ambient,"forestSource") as AudioSource,GameAudioBus.Ambience);Route(Field(ambient,"villageSource") as AudioSource,GameAudioBus.Ambience);Route(Field(ambient,"demonSource") as AudioSource,GameAudioBus.Ambience);Route(Field(ambient,"adventureSource") as AudioSource,GameAudioBus.Music);Route(Field(ambient,"combatSource") as AudioSource,GameAudioBus.Music);}
         foreach(var lava in root.GetComponentsInChildren<DemonCliffAtmosphere>(true))Route(Field(lava,"lavaAmbience") as AudioSource,GameAudioBus.Ambience);
         return sources.Length;
     }

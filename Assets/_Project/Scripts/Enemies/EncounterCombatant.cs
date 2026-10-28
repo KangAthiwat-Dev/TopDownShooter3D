@@ -94,7 +94,12 @@ public sealed class EncounterCombatant : MonoBehaviour, IBossHealthSource
     private void OnEnable() { if (health != null) health.Died += Die; }
     private void Start()
     {
-        if (!AgentReady && NavMesh.SamplePosition(home, out var hit, 2f, agent.areaMask)) agent.Warp(hit.position);
+        if (!AgentReady && NavMesh.SamplePosition(home, out var hit, 2f, agent.areaMask))
+        {
+            // Register authored scene actors only after the surface is available.
+            if (!agent.enabled) { transform.position = hit.position; agent.enabled = true; }
+            agent.Warp(hit.position);
+        }
         StopMoving();
         nextPatrol = Time.time + UnityEngine.Random.Range(.3f, 1.2f);
     }

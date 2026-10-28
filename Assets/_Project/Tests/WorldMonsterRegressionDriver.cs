@@ -63,13 +63,15 @@ public sealed class WorldMonsterRegressionDriver : MonoBehaviour
         Check(director.Initialized,"Director initializes without waves");
         yield return Wait(.5f);
         Check(FindObjectsByType<EnemyWaveSpawner>(FindObjectsSortMode.None).All(s=>!s.enabled),"Legacy waves retained but disabled");
-        Check(director.CampCount==3&&director.RoamingAlive==22&&director.TotalAlive==37,"Population is bounded at 22 roaming + 15 camp members");
+        int expectedCamps=director.useFixedCamps?director.fixedCamps.Length:director.campPopulation;
+        int expectedRoaming=director.species.Sum(s=>s.population),expectedTotal=expectedRoaming+expectedCamps*5;
+        Check(director.CampCount==expectedCamps&&director.RoamingAlive==expectedRoaming&&director.TotalAlive==expectedTotal,"Population matches configured roaming species and complete camp squads");
         var members=Members();
         foreach(var s in director.species)Check(members.Count(m=>m.SpeciesId==s.id)==s.population,"All configured "+s.id+" spawn: "+s.population);
-        Check(members.Count(m=>m.SpeciesId=="goblin_chief")==3&&members.Count(m=>m.SpeciesId=="goblin_demon")==12,"Each tribe contains one chief and four guards");
+        Check(members.Count(m=>m.SpeciesId=="goblin_chief")==expectedCamps&&members.Count(m=>m.SpeciesId=="goblin_demon")==expectedCamps*4,"Each tribe contains one chief and four guards");
         Check(members.All(m=>m.GetComponent<NavMeshAgent>().isOnNavMesh),"Every world monster starts on the NavMesh");
         Check(members.All(m=>!director.IsProtected(m.transform.position)&&m.transform.position.y>=2.3f),"No monster starts in protected settlements, encounters or river beds");
-        Check(FindObjectsByType<KingOfDemonAI>(FindObjectsSortMode.None).Length==1&&FindObjectsByType<EncounterCombatant>(FindObjectsSortMode.None).Length==2,"The three existing boss combatants remain in the scene");
+        Check(FindObjectsByType<KingOfDemonAI>(FindObjectsInactive.Include,FindObjectsSortMode.None).Length==1,"The existing King boss remains in the scene");
         foreach(var camp in director.ActiveCamps)
         {
             Check(!director.IsProtected(camp.transform.position,camp.radius),"Camp "+camp.CampId+" entire footprint avoids protected zones");
@@ -126,9 +128,9 @@ public sealed class WorldMonsterRegressionDriver : MonoBehaviour
         yield return Wait(.2f);
         Check(deaths==1&&progression.Experience==expectedExp,"A real Skeleton death reports once and grants its existing EXP reward once");
         Check(skeleton.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).IsName("Death"),"Skeleton enters its death animation");
-        Check(director.RoamingAlive==21,"Dead roaming slot stays empty during cooldown");
-        yield return Until(()=>director.RoamingAlive==22,8);
-        Check(director.RoamingAlive==22&&director.TotalAlive==37,"One roaming replacement restores the cap after cooldown");
+        Check(director.RoamingAlive==expectedRoaming-1,"Dead roaming slot stays empty during cooldown");
+        yield return Until(()=>director.RoamingAlive==expectedRoaming,8);
+        Check(director.RoamingAlive==expectedRoaming&&director.TotalAlive==expectedTotal,"One roaming replacement restores the cap after cooldown");
         foreach(var m in Members())Freeze(m);
         var camp0=director.ActiveCamps[0];var campPosition=camp0.transform.position;
         var guards=Members().Where(m=>m.CampId==camp0.CampId).ToArray();
@@ -141,10 +143,12 @@ public sealed class WorldMonsterRegressionDriver : MonoBehaviour
         MovePlayer(campPosition+Vector3.back*12);yield return Wait(3.5f);
         Check(director.ActiveCamps[0]==camp0&&Members().Count(m=>m.CampId==camp0.CampId)==0,"A cleared camp remains cleared while the player is nearby");
         MovePlayer(new Vector3(-150,4,-150));
-        yield return Until(()=>director.ActiveCamps[0]!=camp0,12);
-        Check(director.ActiveCamps[0]!=camp0,"Cleared camp regenerates as a whole after the player leaves");
-        Check(WorldMonsterDirector.HorizontalDistance(director.ActiveCamps[0].transform.position,campPosition)>20,"Regenerated tribe chooses a different clearing");
-        Check(Members().Count(m=>m.CampId==0)==5&&director.TotalAlive==37,"Regenerated camp restores exactly chief + four guards");
+        yield return Until(()=>Members().Count(m=>m.CampId==0)==5,12);
+        if(director.useFixedCamps)
+            Check(director.ActiveCamps[0]==camp0&&Vector3.Distance(camp0.transform.position,campPosition)<.001f,"Cleared fixed camp replenishes monsters while preserving its permanent layout");
+        else
+            Check(director.ActiveCamps[0]!=camp0&&WorldMonsterDirector.HorizontalDistance(director.ActiveCamps[0].transform.position,campPosition)>20,"Legacy random tribe chooses a different clearing");
+        Check(Members().Count(m=>m.CampId==0)==5&&director.TotalAlive==expectedTotal,"Regenerated camp restores exactly chief + four guards");
         Check(Members().All(m=>m.GetComponent<NavMeshAgent>().isOnNavMesh),"Replacement members also remain on the NavMesh");
         Check(deaths==6,"Death hook excludes camp cleanup and ordinary despawning");
         foreach(var m in Members())Freeze(m);

@@ -43,17 +43,18 @@ public sealed class DemonZoneRegressionDriver : MonoBehaviour
         keyboard=InputSystem.AddDevice<Keyboard>("DemonZoneTestKeyboard");var input=player.GetComponent<PlayerInput>();input.neverAutoSwitchControlSchemes=true;input.actions.devices=new InputDevice[]{keyboard};
         var encounters=FindObjectsByType<DemonArenaEncounter>(FindObjectsSortMode.None);
         var sample=encounters.First(e=>e.name.StartsWith("01"));var lord=encounters.First(e=>e.name.StartsWith("02"));var king=encounters.First(e=>e.name.StartsWith("03"));
-        var kingBoss=Get<GameObject>(king,"boss").GetComponent<KingOfDemonAI>();var lordBoss=Get<GameObject>(lord,"boss").GetComponent<EncounterCombatant>();var gate=FindAnyObjectByType<DemonProgressionGate>();
+        var kingBoss=Get<GameObject>(king,"boss").GetComponent<KingOfDemonAI>();var lordBoss=Get<GameObject>(lord,"boss").GetComponent<EncounterCombatant>();var gate=FindObjectsByType<EncounterBarrier>(FindObjectsSortMode.None).Single(b=>b.Prerequisite==lord);
+        var closedPoint=gate.BlockingColliders[0].bounds.center;closedPoint.y=gate.MovingPart.position.y+.12f;var gateNormal=gate.MovingPart.forward;
         Check(encounters.Length==3&&sample.Waves.Count==1&&lord.Waves.Count==1&&king.Waves.Count==3,"Three separately editable arenas and three King stages exist");
         Check(sample.Waves.SelectMany(w=>w.members).All(s=>s.prefab.GetComponent<EnemyAI>()!=null),"Sample zone contains ordinary monsters only");
         Check(lord.Waves[0].members.Count(s=>s.prefab.GetComponent<EncounterCombatant>()!=null)==2&&king.Waves[1].members.Count(s=>s.prefab.GetComponent<EncounterCombatant>()!=null)==2,"DemonLord and King stage two each have exactly two dragons");
         Check(king.Waves[0].members.All(s=>s.prefab.name.Contains("Goblin")||s.prefab.name.Contains("Skeleton")),"First King wave excludes wildlife");
-        Check(!gate.IsOpen&&gate.GetComponent<Collider>().enabled&&!kingBoss.gameObject.activeSelf&&!lordBoss.gameObject.activeSelf,"Rock gate starts closed and bosses wait for their encounter stage");
+        Check(!gate.IsOpen&&gate.BlockingColliders.All(c=>c.enabled)&&!kingBoss.gameObject.activeSelf&&!lordBoss.gameObject.activeSelf,"User door starts closed and bosses wait for their encounter stage");
         Warp(king.Arena.transform.position);yield return Wait(.35f);
         Check(king.WaveIndex==-1&&!kingBoss.gameObject.activeSelf,"Bypassing the gate cannot activate King before DemonLord victory");
-        Warp(gate.transform.position-gate.transform.right*5);var controller=player.GetComponent<CharacterController>();
-        for(int i=0;i<20;i++)controller.Move(gate.transform.right*.5f);
-        Check(gate.transform.InverseTransformPoint(player.transform.position).x < -1.4f,"Actual player controller cannot cross the closed rock gate");
+        Warp(closedPoint-gateNormal*3);var controller=player.GetComponent<CharacterController>();
+        for(int i=0;i<24;i++)controller.Move(gateNormal*.25f);
+        Check(Vector3.Dot(player.transform.position-closedPoint,gateNormal)<-.2f,"Actual player controller cannot cross the closed user door");
         Warp(sample.Arena.transform.position);yield return Wait(.35f);
         Check(sample.WaveIndex==0&&sample.LivingCount==5,"Entering sample spawns exactly five monsters");
         var normal=sample.GetComponentsInChildren<EnemyHealth>().First();normal.TakeDamage(40);yield return Wait(.15f);
@@ -72,10 +73,10 @@ public sealed class DemonZoneRegressionDriver : MonoBehaviour
         Warp(sample.Arena.transform.position);yield return Wait(5.4f);
         Check(lord.WaveIndex==-1&&!lordBoss.gameObject.activeSelf&&lordBoss.Health.IsAlive,"Abandoning unfinished fight resets dead boss and incomplete stage safely");
         Warp(lord.Arena.transform.position);yield return Wait(.4f);Check(lord.LivingCount==7,"Re-entry creates one clean Lord attempt without duplicate guards");
-        KillMembers(lord);yield return Wait(2.9f);Check(lord.Completed&&gate.IsOpen&&!gate.GetComponent<Collider>().enabled&&!gate.GetComponent<NavMeshObstacle>().enabled,"Clearing all Lord combatants opens physical and navigation gate");
-        yield return Wait(2.1f);Check(!Get<Transform>(gate,"rocks").gameObject.activeSelf,"Rock wall finishes sinking out of the path");
-        Warp(gate.transform.position-gate.transform.right*5);for(int i=0;i<20;i++)controller.Move(gate.transform.right*.5f);
-        Check(gate.transform.InverseTransformPoint(player.transform.position).x > 2,"Actual player controller crosses the opened gate");
+        KillMembers(lord);yield return Wait(5.2f);Check(lord.Completed&&gate.IsOpen&&gate.BlockingColliders.All(c=>!c.enabled)&&Get<NavMeshObstacle[]>(gate,"navigationObstacles").All(o=>!o.enabled),"Clearing all Lord combatants opens physical and navigation gate");
+        Check(gate.MovingPart.gameObject.activeSelf,"Opened door stays visible while permanent walls remain");
+        Warp(closedPoint-gateNormal*3);for(int i=0;i<24;i++)controller.Move(gateNormal*.25f);
+        Check(Vector3.Dot(player.transform.position-closedPoint,gateNormal)>1.5f,"Actual player controller crosses the opened gate");
 
         Warp(king.Arena.transform.position);yield return Wait(.35f);
         Check(king.WaveIndex==0&&king.LivingCount==8&&!kingBoss.gameObject.activeSelf,"King stage one spawns eight monsters while boss remains absent");

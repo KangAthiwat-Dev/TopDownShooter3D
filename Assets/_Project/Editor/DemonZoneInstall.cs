@@ -25,7 +25,7 @@ public static partial class DemonZoneSetup
         if(EditorApplication.isPlayingOrWillChangePlaymode)throw new Exception("Stop Play mode first.");
         var king=UnityEngine.Object.FindFirstObjectByType<KingOfDemonAI>();
         var lord=UnityEngine.Object.FindObjectsByType<EncounterCombatant>(FindObjectsSortMode.None).First(a=>a.name=="DemonLord");
-        if(GameObject.Find("Demon_Encounter_Layout")!=null)throw new Exception("Encounter layout already exists; edit its anchors instead of reinstalling.");
+        if(GameObject.Find("Demon_Encounter_Layout")!=null||UnityEngine.Object.FindObjectsByType<DemonArenaEncounter>(FindObjectsSortMode.None).Length>0)throw new Exception("Encounter layout already exists; edit its anchors instead of reinstalling.");
         Directory.CreateDirectory(ZoneFolder);
         var goblin=Variant("Enemy_GoblinDemon",280,24,4.1f,180);
         var skeleton=Variant("Enemy_Skeleton",220,20,3.8f,140);
@@ -150,7 +150,8 @@ public static partial class DemonZoneSetup
     {
         if(EditorApplication.isPlayingOrWillChangePlaymode)return;
         var layout=GameObject.Find("Demon_Encounter_Layout");
-        Undo.SetTransformParent(layout.transform,GameObject.Find("Zone_Demon").transform,"Group Demon encounter layout");
+        if(layout!=null)Undo.SetTransformParent(layout.transform,GameObject.Find("Zone_Demon").transform,"Group Demon encounter layout");
+        else layout=GameObject.Find("Zone_Demon");
         var report=new System.Text.StringBuilder();int failures=0;
         foreach(var e in UnityEngine.Object.FindObjectsByType<DemonArenaEncounter>(FindObjectsSortMode.None))
         {

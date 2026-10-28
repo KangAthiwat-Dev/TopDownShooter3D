@@ -17,6 +17,9 @@ public sealed class TownMusicZone : MonoBehaviour
     [SerializeField, Min(.1f)] private float fadeInSeconds = 3.5f;
     [SerializeField, Min(.1f)] private float fadeOutSeconds = 2.5f;
     private float envelope;
+    private float combatEnvelope=1;
+    private bool combatOverride;
+    public void SetCombatOverride(bool value)=>combatOverride=value;
     private bool started,pausedAtSilence;
     public bool IsInside { get; private set; }
     public float Envelope => envelope;
@@ -51,13 +54,14 @@ public sealed class TownMusicZone : MonoBehaviour
             else if(pausedAtSilence){music.UnPause();pausedAtSilence=false;}
         }
         envelope=Mathf.MoveTowards(envelope,IsInside?1f:0f,Time.deltaTime/(IsInside?fadeInSeconds:fadeOutSeconds));
-        music.volume=musicVolume*Mathf.SmoothStep(0f,1f,envelope);
+        combatEnvelope=Mathf.MoveTowards(combatEnvelope,combatOverride?0:1,Time.deltaTime/1.2f);
+        music.volume=musicVolume*Mathf.SmoothStep(0f,1f,envelope)*Mathf.SmoothStep(0f,1f,combatEnvelope);
         if(!IsInside&&envelope<=0f&&started&&!pausedAtSilence){music.Pause();pausedAtSilence=true;}
     }
     private void OnDisable()
     {
         if(music!=null){music.Stop();music.volume=0f;}
-        started=pausedAtSilence=IsInside=false;envelope=0f;
+        started=pausedAtSilence=IsInside=false;envelope=0f;combatOverride=false;combatEnvelope=1;
     }
     private void OnDrawGizmosSelected()
     {Gizmos.color=new Color(.85f,.68f,.3f,.8f);Gizmos.matrix=boundsFrame!=null?boundsFrame.localToWorldMatrix:Matrix4x4.identity;Gizmos.DrawWireCube(center,size);}

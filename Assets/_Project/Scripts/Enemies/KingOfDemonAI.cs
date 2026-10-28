@@ -105,7 +105,13 @@ public sealed class KingOfDemonAI : MonoBehaviour, IBossHealthSource
     private void Start()
     {
         StopMoving();
-        if (!AgentReady && NavMesh.SamplePosition(home, out var hit, 2f, agent.areaMask)) agent.Warp(hit.position);
+        if (!AgentReady && NavMesh.SamplePosition(home, out var hit, 2f, agent.areaMask))
+        {
+            // Scene bosses begin with the agent disabled so native activation cannot
+            // run before the scene's NavMeshSurface has registered its baked data.
+            if (!agent.enabled) { transform.position = hit.position; agent.enabled = true; }
+            agent.Warp(hit.position);
+        }
     }
 
     private void Update()

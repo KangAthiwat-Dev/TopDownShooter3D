@@ -30,6 +30,9 @@ public sealed class WorldMonsterDirector : MonoBehaviour
     public WorldMonsterSafeZone[] safeZones;
     public WorldMonsterSite[] roamingSites;
     public Transform[] campSites;
+    [Header("Authored permanent camps (layout stays; only monsters respawn)")]
+    public bool useFixedCamps;
+    public WorldMonsterCamp[] fixedCamps=Array.Empty<WorldMonsterCamp>();
     public WorldMonsterSpecies[] species;
     public WorldMonsterCamp[] campTemplates;
     public GameObject goblinPrefab;
@@ -57,6 +60,9 @@ public sealed class WorldMonsterDirector : MonoBehaviour
     {
         public WorldMonsterCamp layout;
         public readonly List<WorldMonsterMember> members = new List<WorldMonsterMember>();
+        public bool fixedSite,populated;
+        public bool[] defeated;
+        public Transform monsterRoot;
         public float readyAt = -1;
     }
     private readonly List<RoamingSlot> roaming = new List<RoamingSlot>();
@@ -73,17 +79,31 @@ public sealed class WorldMonsterDirector : MonoBehaviour
 
     private IEnumerator Start()
     {
-        if (terrain == null || player == null || species == null || roamingSites == null || roamingSites.Length == 0 || campSites == null)
+        if (terrain == null || player == null || species == null || roamingSites == null || roamingSites.Length == 0 ||
+            (useFixedCamps?fixedCamps==null||fixedCamps.Length==0:campSites==null))
         { Debug.LogError("World population is missing its terrain, player or spawn sites.", this); yield break; }
         ActiveSeed = seed == 0 ? Environment.TickCount : seed;
         random = new System.Random(ActiveSeed);
         view = Camera.main;
         roamingRoot = new GameObject("Roaming Monsters (runtime)").transform;
         roamingRoot.SetParent(transform, false);
-        campRoot = new GameObject("Goblin Tribes (runtime)").transform;
-        campRoot.SetParent(transform, false);
-        // Reserve complete camp footprints before placing solitary monsters.
-        for (int i=0; i<campPopulation; i++)
+        if(!useFixedCamps){campRoot = new GameObject("Goblin Tribes (runtime)").transform;campRoot.SetParent(transform, false);}
+        // Reserve all fixed footprints even if a spawn point is temporarily occupied.
+        if(useFixedCamps)
+        {
+            for(int i=0;i<fixedCamps.Length;i++)
+            {
+                var layout=fixedCamps[i];
+                if(layout==null||layout.memberPoints==null||layout.memberPoints.Length==0)
+                {Debug.LogError("Fixed camp "+i+" is missing its layout or member points.",this);continue;}
+                layout.CampId=i;
+                var slot=new CampSlot{layout=layout,fixedSite=true,defeated=new bool[layout.memberPoints.Length]};
+                slot.monsterRoot=new GameObject("Camp Monsters (runtime)").transform;slot.monsterRoot.SetParent(layout.transform,false);
+                for(int m=0;m<layout.memberPoints.Length;m++)slot.members.Add(null);
+                camps.Add(slot);campViews.Add(layout);TryPopulateFixedCamp(slot,i);yield return null;
+            }
+        }
+        else for (int i=0; i<campPopulation; i++)
         {
             var slot = new CampSlot();
             if (TryCreateCamp(slot, camps.Count, true)) { camps.Add(slot); campViews.Add(slot.layout); }
@@ -108,7 +128,7 @@ public sealed class WorldMonsterDirector : MonoBehaviour
         if (!Initialized || Time.timeScale <= 0 || Time.time < nextTick) return;
         nextTick = Time.time + .75f;
         // A temporarily obstructed clearing must not permanently lose a configured tribe.
-        if (camps.Count < campPopulation)
+        if (!useFixedCamps && camps.Count < campPopulation)
         {
             var missing = new CampSlot();
             if (TryCreateCamp(missing, camps.Count, false)) { camps.Add(missing); campViews.Add(missing.layout); }
@@ -122,6 +142,7 @@ public sealed class WorldMonsterDirector : MonoBehaviour
         for (int i=0; i<camps.Count; i++)
         {
             var camp=camps[i];
+            if(camp.fixedSite){UpdateFixedCamp(camp,i);continue;}
             bool alive=false; foreach(var member in camp.members) if(Living(member)) {alive=true;break;}
             if (alive) continue;
             if (camp.readyAt < 0) camp.readyAt = Time.time + campRespawnDelay;
@@ -130,6 +151,46 @@ public sealed class WorldMonsterDirector : MonoBehaviour
             if (!TryCreateCamp(replacement, i, false)) continue;
             Destroy(camp.layout.gameObject);
             camps[i]=replacement; campViews[i]=replacement.layout;
+        }
+    }
+
+    public int CampLivingCount(int id)
+    {
+        if(id<0||id>=camps.Count)return 0;int alive=0;foreach(var member in camps[id].members)if(Living(member))alive++;return alive;
+    }
+    public float CampRespawnRemaining(int id)=>id>=0&&id<camps.Count&&camps[id].readyAt>=0?Mathf.Max(0,camps[id].readyAt-Time.time):-1;
+    private bool FixedMemberPosition(CampSlot camp,int index,out Vector3 point)
+    {
+        point=default;var anchor=camp.layout.memberPoints[index];if(anchor==null)return false;
+        var trial=anchor.position;
+        if(!NavMesh.SamplePosition(trial,out var hit,.9f,NavMesh.AllAreas)||Mathf.Abs(hit.position.y-trial.y)>.6f||
+            new Vector2(hit.position.x-trial.x,hit.position.z-trial.z).sqrMagnitude>.25f||IsProtected(hit.position)||!Clear(hit.position,.45f))return false;
+        point=hit.position;return true;
+    }
+    private bool TryPopulateFixedCamp(CampSlot camp,int id)
+    {
+        if(camp.layout==null||goblinPrefab==null||chiefPrefab==null)return false;
+        var points=new Vector3[camp.members.Count];
+        for(int i=0;i<points.Length;i++)if(!FixedMemberPosition(camp,i,out points[i]))return false;
+        Array.Clear(camp.defeated,0,camp.defeated.Length);
+        for(int i=0;i<points.Length;i++)camp.members[i]=Spawn(i==0?chiefPrefab:goblinPrefab,i==0?"goblin_chief":"goblin_demon",id,points[i],camp.layout.memberPoints[i].eulerAngles.y,camp.monsterRoot);
+        camp.populated=true;camp.readyAt=-1;return true;
+    }
+    private void UpdateFixedCamp(CampSlot camp,int id)
+    {
+        if(camp.layout==null)return;
+        if(!camp.populated){TryPopulateFixedCamp(camp,id);return;}
+        if(camp.readyAt>=0)
+        {
+            if(Time.time<camp.readyAt||!FarAndHidden(camp.layout.transform.position,camp.layout.radius,false))return;
+            TryPopulateFixedCamp(camp,id);return;
+        }
+        // Recover an externally removed living actor without treating it as a kill,
+        // replenishing defeated members, or replacing the permanent layout.
+        for(int i=0;i<camp.members.Count;i++)
+        {
+            if(camp.defeated[i]||camp.members[i]!=null||!FarAndHidden(camp.layout.transform.position,camp.layout.radius,false))continue;
+            if(FixedMemberPosition(camp,i,out var point))camp.members[i]=Spawn(i==0?chiefPrefab:goblinPrefab,i==0?"goblin_chief":"goblin_demon",id,point,camp.layout.memberPoints[i].eulerAngles.y,camp.monsterRoot);
         }
     }
 
@@ -247,6 +308,13 @@ public sealed class WorldMonsterDirector : MonoBehaviour
     internal void MemberDefeated(WorldMonsterMember member)
     {
         foreach(var slot in roaming) if(slot.member==member) {slot.readyAt=Time.time+roamingRespawnDelay;break;}
+        foreach(var camp in camps)
+        {
+            if(!camp.fixedSite)continue;int index=camp.members.IndexOf(member);if(index<0)continue;
+            camp.defeated[index]=true;
+            if(camp.readyAt<0&&Array.TrueForAll(camp.defeated,dead=>dead))camp.readyAt=Time.time+campRespawnDelay;
+            break;
+        }
         MonsterDefeated?.Invoke(member);
     }
 
@@ -255,6 +323,10 @@ public sealed class WorldMonsterDirector : MonoBehaviour
         if(shuttingDown) return;
         foreach(var slot in roaming) if(slot.member==member)
         { if(!member.Defeated) slot.readyAt=Time.time+roamingRespawnDelay;slot.member=null;break; }
+        foreach(var camp in camps)
+        {
+            if(!camp.fixedSite)continue;int index=camp.members.IndexOf(member);if(index<0)continue;camp.members[index]=null;break;
+        }
     }
 
     private void OnDestroy() => shuttingDown=true;
@@ -268,6 +340,10 @@ public sealed class WorldMonsterDirector : MonoBehaviour
             Gizmos.DrawWireSphere(site.point.position+Vector3.up*.3f,.3f);
         }
         Gizmos.color=new Color(1,.6f,.15f);
-        if(campSites!=null)foreach(var site in campSites)if(site!=null)Gizmos.DrawWireSphere(site.position+Vector3.up*.3f,.8f);
+        if(useFixedCamps)
+        {
+            if(fixedCamps!=null)foreach(var camp in fixedCamps)if(camp!=null)Gizmos.DrawWireSphere(camp.transform.position+Vector3.up*.3f,camp.radius);
+        }
+        else if(campSites!=null)foreach(var site in campSites)if(site!=null)Gizmos.DrawWireSphere(site.position+Vector3.up*.3f,.8f);
     }
 }
