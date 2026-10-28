@@ -32,6 +32,10 @@ public class PlayerMeleeAttack : MonoBehaviour
     private bool activeKillsInOneHit;
     private float activeHitRange;
     private float activeHitTime;
+    private bool activeWeaponAttack;
+    private PlayerCombatSkills skills;
+    private CombatHitSettings hitSettings;
+    public event Action<bool> SwingCommitted;
 
     public bool IsAttacking => attackInProgress;
 
@@ -51,6 +55,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         equipment = GetComponent<PlayerMeleeEquipment>();
         playerInteractor = GetComponent<PlayerInteractor>();
         inputGate = GetComponent<PlayerInputGate>();
+        skills = GetComponent<PlayerCombatSkills>();
     }
 
     private void OnEnable()
@@ -113,13 +118,15 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (!hitResolved && progress >= activeHitTime)
         {
             hitResolved = true;
+            SwingCommitted?.Invoke(activeWeaponAttack);
 
             if (IsTargetInHitRange(pendingTarget))
             {
                 Targetable hitTarget = pendingTarget;
                 float damage = activeKillsInOneHit && hitTarget.Health.AllowInstantKill
                     ? hitTarget.Health.CurrentHealth : activeDamage;
-                hitTarget.Health.TakeDamage(damage, gameObject);
+                if(skills!=null)skills.DealDamage(hitTarget.Health,damage,hitSettings,activeKillsInOneHit);
+                else hitTarget.Health.TakeDamage(damage, gameObject);
                 MeleeHitConfirmed?.Invoke(hitTarget);
             }
         }
@@ -139,6 +146,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         attackInProgress = true;
         activeDamage = weapon != null ? weapon.Damage : unarmedDamage;
+        activeWeaponAttack = weapon != null;
+        hitSettings = skills != null ? skills.HitSettings : default;
         activeKillsInOneHit = weapon != null && weapon.KillsInOneHit;
         activeHitRange = requestedRange;
         activeHitTime = weapon != null ? weapon.HitNormalizedTime : hitNormalizedTime;

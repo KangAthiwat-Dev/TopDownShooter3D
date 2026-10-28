@@ -85,7 +85,7 @@ TrailRenderer:
   m_PreviewTimeScale: 1
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 1.4949999
+    widthMultiplier: 2.16
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -270,7 +270,7 @@ TrailRenderer:
   m_PreviewTimeScale: 1
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 1.38
+    widthMultiplier: 1.6200001
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -546,6 +546,7 @@ MonoBehaviour:
     m_NumColorKeys: 2
     m_NumAlphaKeys: 4
   intensity: 1
+  iceTailBrightness: 1.6
   opacity: 0.9
   width: 1.35
   lifetime: 0.3
@@ -595,7 +596,7 @@ AudioSource:
   m_GameObject: {fileID: 7300344296929481318}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 694568543298349780, guid: 898f8bbe1d0ee42318ded2121fb4a4b6, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: f22e87740453ac248871d5e33e57d4d8, type: 3}
   m_PlayOnAwake: 0
@@ -789,7 +790,7 @@ TrailRenderer:
   m_PreviewTimeScale: 1
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 1.15
+    widthMultiplier: 1.35
     widthCurve:
       serializedVersion: 2
       m_Curve:

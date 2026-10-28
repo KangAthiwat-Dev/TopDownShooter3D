@@ -61,6 +61,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 capturedWorldDirection;
 
     public bool IsDashing => dashTimeRemaining > 0f;
+    public event System.Action DashStarted;
     public bool IsShadowDashing { get; private set; }
     public bool IsRunning { get; private set; }
     public bool IsSprinting => IsRunning;
@@ -317,6 +318,7 @@ public class PlayerMovement : MonoBehaviour
 
         dashTimeRemaining = dashDuration;
         dashCooldownRemaining = dashCooldown;
+        DashStarted?.Invoke();
     }
 
     private Vector3 UpdateShortDash()

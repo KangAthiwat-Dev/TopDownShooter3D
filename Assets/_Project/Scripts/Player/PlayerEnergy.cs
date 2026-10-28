@@ -56,6 +56,11 @@ public class PlayerEnergy : MonoBehaviour
         EnergyChanged?.Invoke(CurrentEnergy,MaxEnergy);
     }
     public bool ConsumeSprintEnergy(float deltaTime)=>Consume(sprintDrainPerSecond,deltaTime);
+    public bool TryRestore(float amount)
+    {
+        if (amount <= 0 || CurrentEnergy >= MaxEnergy) return false;
+        SetEnergy(CurrentEnergy + amount); return true;
+    }
 
     private void Update()
     {

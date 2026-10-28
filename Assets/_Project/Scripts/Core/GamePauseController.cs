@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 [Flags]
-public enum GamePauseReason { None = 0, Inventory = 1, GameOver = 2, Upgrades = 4 }
+public enum GamePauseReason { None = 0, Inventory = 1, GameOver = 2, Upgrades = 4, Dialogue = 8, Journal = 16, PauseMenu = 32 }
 
 // One owner of time/cursor/audio. Closing Inventory cannot clear Game Over's
 // independent reason, even if the two death subscribers run in another order.
@@ -18,6 +18,7 @@ public class GamePauseController : MonoBehaviour
     public bool IsGameOver => (reasons & GamePauseReason.GameOver) != 0;
     public bool BlocksGameplay => IsPaused || Time.timeScale <= 0f;
     public GamePauseReason Reasons => reasons;
+    public int LastReasonChangeFrame {get;private set;}=-1;
     public event Action<bool> PauseChanged;
 
     private void Awake()
@@ -36,6 +37,7 @@ public class GamePauseController : MonoBehaviour
         if (reason == GamePauseReason.None || (paused && !isActiveAndEnabled)) return;
         GamePauseReason next = paused ? reasons | reason : reasons & ~reason;
         if (next == reasons) return;
+        LastReasonChangeFrame=Time.frameCount;
         bool wasPaused = IsPaused;
         reasons = next;
         if (IsPaused)

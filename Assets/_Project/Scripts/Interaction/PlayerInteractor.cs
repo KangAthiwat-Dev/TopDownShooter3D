@@ -54,6 +54,7 @@ public class PlayerInteractor : MonoBehaviour
     }
 
     public event Action<Interactable> FocusChanged;
+    public event Action WeaponCollected;
 
     private void Awake()
     {
@@ -197,6 +198,7 @@ public class PlayerInteractor : MonoBehaviour
                 return;
             }
             pickupCommitted = true;
+            WeaponCollected?.Invoke();
         }
     }
 

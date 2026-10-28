@@ -35,11 +35,12 @@ public sealed class PlayerUpgradeStats : MonoBehaviour
         int rank=progression.UpgradeRank(kind);
         switch(kind)
         {
-            case PlayerUpgrade.Vitality:return $"+{healthPerRank:0} max health, +{resistancePerRank*100:0.#}% damage resistance";
-            case PlayerUpgrade.Endurance:return $"+{energyPerRank:0} energy for sprinting and transformation";
-            case PlayerUpgrade.Transformation:return $"Form duration bonus  +{rank*formEfficiencyPerRank*100:0}%  >  +{(rank+1)*formEfficiencyPerRank*100:0}%";
-            case PlayerUpgrade.Firepower:return $"Bullet damage  {weapon.Damage:0.#}  >  {weapon.BaseDamage*(1+(rank+1)*damagePerRank):0.#}";
-            default:return $"Fire cadence bonus  +{rank*fireRatePerRank*100:0}%  >  +{(rank+1)*fireRatePerRank*100:0}%";
+            case PlayerUpgrade.Vitality:return $"เพิ่มเลือดสูงสุด {healthPerRank:0} และลดดาเมจที่ได้รับอีก {resistancePerRank*100:0.#}% ต่อขั้น\nเพิ่มความทนทานในการต่อสู้";
+            case PlayerUpgrade.Endurance:return $"เพิ่มพลังงาน {energyPerRank:0} หน่วยต่อขั้น\nใช้วิ่งและแปลงร่างได้นานขึ้น";
+            case PlayerUpgrade.Transformation:return $"เวลาแปลงร่างเพิ่ม  {rank*formEfficiencyPerRank*100:0}% → {(rank+1)*formEfficiencyPerRank*100:0}%\nลดการใช้พลังงานระหว่างแปลงร่าง";
+            case PlayerUpgrade.Firepower:return $"ดาเมจกระสุนนัดหลัก  {weapon.Damage:0.#} → {weapon.BaseDamage*(1+(rank+1)*damagePerRank):0.#}\nกระสุนนัดข้างใช้ดาเมจ 50% ของนัดหลัก";
+            case PlayerUpgrade.FireRate:return $"ความถี่การยิงเพิ่ม  {rank*fireRatePerRank*100:0}% → {(rank+1)*fireRatePerRank*100:0}%\nลดช่วงพักระหว่างนัดและระหว่างชุด";
+            default:return GetComponent<PlayerCombatSkills>()?.Preview(kind)??"";
         }
     }
 }

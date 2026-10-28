@@ -16,7 +16,7 @@ public static class CreatureEnemySetup
 {
     public const string Folder = "Assets/_Project/Enemies/Creatures";
     public const string BearSource = "Assets/Blink/Art/Animals/Stylized/Bear/Bear_Prefabs/Bear_4.prefab";
-    public const string SpiderSource = "Assets/Spiders/Prefabs/Black Widow.prefab";
+    public const string SpiderSource = "Assets/Assets_Imported/Giant_Spider_Lite/Giant_Spider_Lite.fbx";
     private const string BearAnimations = "Assets/Blink/Art/Animals/Stylized/Bear/Bear_Animations/";
     private const string BasePrefab = "Assets/_Project/Prefabs/Enemies/EnemyBase.prefab";
 
@@ -66,8 +66,7 @@ public static class CreatureEnemySetup
     {
         if (spider)
         {
-            string file = role == "Run" ? "Walk" : role == "Attack" ? "Attack1" : role;
-            return AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/Spiders/Animations/" + file + ".anim");
+            return AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/_Project/Enemies/StoryCreatures/GiantSpider/" + role + ".anim");
         }
         string name = "Bear_" + (role == "Walk" ? "WalkForward" : role == "Run" ? "RunForward" : role == "Attack" ? "Attack1" : role);
         var clips = AssetDatabase.LoadAllAssetsAtPath(BearAnimations + name + ".fbx").OfType<AnimationClip>().Where(c => !c.name.StartsWith("__preview__")).ToArray();
@@ -272,7 +271,7 @@ public static class CreatureEnemySetup
                 var actor = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(Prefab(kind)), origin + Vector3.right * (i++ == 0 ? -2 : 2), Quaternion.Euler(0, 160, 0), holder.transform);
                 actor.GetComponent<NavMeshAgent>().enabled = false;
                 var model = actor.transform.Find("ModelRoot/CreatureVisual").GetChild(0).gameObject;
-                AssetDatabase.LoadAssetAtPath<AnimationClip>(Folder + "/" + kind + "/" + kind + "_Idle.anim").SampleAnimation(model, 0.2f);
+                SourceClip(kind == "Spider", "Idle").SampleAnimation(model, 0.2f);
             }
             camera.transform.position = origin + new Vector3(6, 5.8f, -8.5f); camera.transform.LookAt(origin + Vector3.up * 0.65f); camera.fieldOfView = 42;
             camera.targetTexture = rt; camera.Render(); RenderTexture.active = rt; pixels.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0); pixels.Apply();

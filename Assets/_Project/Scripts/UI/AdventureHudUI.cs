@@ -43,15 +43,15 @@ public sealed class AdventureHudUI : MonoBehaviour
         bool melee=attack!=null&&attack.CurrentMode==AttackMode.Melee;
         if(weaponName!=null)weaponName.text=melee?(equipment!=null&&equipment.HasWeapon?equipment.CurrentWeapon.DisplayName.ToUpperInvariant():"BARE HANDS"):"RIFLE";
         if(weaponStatus!=null)weaponStatus.text=melee?"CLOSE COMBAT  /  J":"J  ATTACK   /   AUTO AIM";
-        string location="FOREST",kind="WILDERNESS";
+        string location="THORNVEIL FOREST",kind="WILDERNESS";
         if(city!=null&&city.IsInside){location=city.AreaName;kind="SETTLEMENT";}
         else if(demonCliffs!=null&&demonCliffs.Contains(movement.transform.position)){location=demonCliffs.displayName;kind="CASTLE APPROACH";}
         else if(map!=null)
         {
             var position=movement.transform.position;
-            if(Near(map.sanctuary,position,24f)){location="SUMMONING GROVE";kind="SANCTUARY";}
-            else if(Near(map.village,position,24f)){location="THE VILLAGE";kind="SETTLEMENT";}
-            else if(demonCliffs==null&&Near(map.castle,position,28f)){location="DARK CASTLE";kind="HOSTILE TERRITORY";}
+            if(Near(map.sanctuary,position,24f)){location="SUMMONING RUINS";kind="SANCTUARY";}
+            else if(Near(map.village,position,24f)){location="OAKSHADE VILLAGE";kind="SETTLEMENT";}
+            else if(demonCliffs==null&&Near(map.castle,position,28f)){location="MALACHAR'S CASTLE";kind="HOSTILE TERRITORY";}
             else if(Near(map.camp,position,13f)){location="FOREST CAMP";kind="CAMPSITE";}
         }
         if(previousArea!=location){previousArea=location;if(areaName!=null)areaName.text=location;}

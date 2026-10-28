@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e29a3c4d6f84be9a0c2d5e6f7182930, type: 3}
+  m_Name: Sword_05
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeWeaponDefinition
+  weaponId: fantasy_sword_05
+  displayName: "\u0E14\u0E32\u0E1A\u0E2B\u0E19\u0E32\u0E21\u0E23\u0E31\u0E15\u0E15\u0E34\u0E01\u0E32\u0E25"
+  description: "\u0E40\u0E01\u0E47\u0E1A\u0E1E\u0E32\u0E14\u0E2B\u0E25\u0E31\u0E07\u0E41\u0E25\u0E30\u0E0A\u0E31\u0E01\u0E43\u0E0A\u0E49\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E28\u0E31\u0E15\u0E23\u0E39\u0E40\u0E02\u0E49\u0E32\u0E1B\u0E23\u0E30\u0E0A\u0E34\u0E14\n\u0E42\u0E04\u0E48\u0E19\u0E21\u0E2D\u0E19\u0E2A\u0E40\u0E15\u0E2D\u0E23\u0E4C\u0E17\u0E31\u0E48\u0E27\u0E44\u0E1B\u0E43\u0E19\u0E04\u0E23\u0E31\u0E49\u0E07\u0E40\u0E14\u0E35\u0E22\u0E27"
+  heldPrefab: {fileID: 1845213284122559203, guid: 7ac569777ef4546c2a8325cb14770227, type: 3}
+  hudIcon: {fileID: 21300000, guid: 4db00b3b5b91d4d34b91b2272a743909, type: 3}
+  damage: 75
+  killsInOneHit: 1
+  hitRange: 2.5
+  hitNormalizedTime: 0.35
+  gripPosition: {x: 0, y: 0, z: 0}
+  gripEulerAngles: {x: 0, y: 0, z: 90}
+  backPosition: {x: 0.24, y: -0.45, z: -0.22}
+  backEulerAngles: {x: 0, y: 0, z: 35}

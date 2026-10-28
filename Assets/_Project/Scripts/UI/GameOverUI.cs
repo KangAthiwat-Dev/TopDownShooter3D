@@ -9,6 +9,8 @@ public class GameOverUI : MonoBehaviour
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GamePauseController pauseController;
+    [SerializeField] private GameObject questFailedBadge;
+    [SerializeField] private UIAudioFeedback audioFeedback;
     private Coroutine pendingPresentation;
 
     private void Awake()
@@ -75,7 +77,11 @@ public class GameOverUI : MonoBehaviour
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
+            var story=playerHealth.GetComponent<PlayerStoryProgress>();
+            if(questFailedBadge!=null)questFailedBadge.SetActive(story!=null&&
+                (story.DefenseStatus==StoryQuestStatus.Active||story.WolfStatus==StoryQuestStatus.Active));
             gameOverPanel.transform.SetAsLastSibling();
+            audioFeedback?.Play(UIAudioCue.Open);
             Button restart = gameOverPanel.GetComponentInChildren<Button>();
             if (restart != null && EventSystem.current != null) EventSystem.current.SetSelectedGameObject(restart.gameObject);
         }
@@ -83,6 +89,7 @@ public class GameOverUI : MonoBehaviour
 
     public void RestartGame()
     {
+        SaveProgress();
         if(pendingPresentation!=null){StopCoroutine(pendingPresentation);pendingPresentation=null;}
         if (pauseController != null) pauseController.ResetForRestart();
         Time.timeScale = 1f;
@@ -98,5 +105,16 @@ public class GameOverUI : MonoBehaviour
         }
 #endif
         SceneManager.LoadScene(currentScene.buildIndex);
+    }
+    public void ReturnToMainMenu()
+    {
+        SaveProgress();if(pauseController!=null)pauseController.ResetForRestart();
+        Time.timeScale=1;AudioListener.pause=false;SceneManager.LoadScene(GameMenuUI.MainScene);
+    }
+    private void SaveProgress()
+    {
+        if(playerHealth==null)return;
+        playerHealth.GetComponent<PlayerProgressionState>()?.FlushSave();
+        playerHealth.GetComponent<PlayerGoldWallet>()?.Commit();playerHealth.GetComponent<PlayerStoryProgress>()?.FlushSave();PlayerPrefs.Save();
     }
 }

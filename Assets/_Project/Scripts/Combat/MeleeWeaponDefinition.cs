@@ -3,6 +3,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "TopDownShooter/Melee Weapon")]
 public class MeleeWeaponDefinition : ScriptableObject
 {
+    [SerializeField] private string weaponId;
     [SerializeField] private string displayName = "Training Club";
     [SerializeField, TextArea(3, 7)] private string description = "A close-range weapon. Carried on your back and drawn automatically near an enemy.";
     [SerializeField] private GameObject heldPrefab;
@@ -17,6 +18,7 @@ public class MeleeWeaponDefinition : ScriptableObject
     [SerializeField] private Vector3 backPosition = new Vector3(0.24f, -0.45f, -0.22f);
     [SerializeField] private Vector3 backEulerAngles = new Vector3(0f, 0f, 35f);
 
+    public string WeaponId => string.IsNullOrWhiteSpace(weaponId) ? name : weaponId;
     public string DisplayName => displayName;
     public string Description => description;
     public GameObject HeldPrefab => heldPrefab;

@@ -1,15 +1,22 @@
 using System;
 using UnityEngine;
 
-public enum PlayerUpgrade { Vitality, Endurance, Transformation, Firepower, FireRate }
+// Keep the first five numeric IDs: v2 profiles and existing Inspector references use them.
+public enum PlayerUpgrade { Vitality, Endurance, Transformation, Firepower, FireRate, ArcaneBarrage, PiercingShot, ExplosiveShot, CriticalStrike, LifeSteal, ThunderDash }
 
 /// <summary>Player EXP, level and derived rank, saved independently of a scene.</summary>
 [DisallowMultipleComponent]
 public sealed class PlayerProgressionState : MonoBehaviour
 {
     public const int MaximumLevel = 100;
-    public const int UpgradeCount = 5;
+    public const int UpgradeCount = 11;
     public const int MaximumUpgradeRank = 20;
+    public static int MaximumRank(PlayerUpgrade kind) => kind switch
+    {
+        PlayerUpgrade.ArcaneBarrage or PlayerUpgrade.PiercingShot or PlayerUpgrade.ExplosiveShot => 3,
+        PlayerUpgrade.CriticalStrike or PlayerUpgrade.LifeSteal or PlayerUpgrade.ThunderDash => 5,
+        _ => MaximumUpgradeRank
+    };
     [SerializeField, Range(1, MaximumLevel)] private int level = 1;
     [SerializeField, Min(0)] private int experience;
     [SerializeField] private int[] upgradeRanks = new int[UpgradeCount];
@@ -33,14 +40,14 @@ public sealed class PlayerProgressionState : MonoBehaviour
     public int UpgradeRank(PlayerUpgrade upgrade)
     {
         int index=(int)upgrade;
-        return index>=0&&index<UpgradeCount&&upgradeRanks!=null&&upgradeRanks.Length==UpgradeCount ? upgradeRanks[index] : 0;
+        return index>=0&&index<UpgradeCount&&upgradeRanks!=null&&index<upgradeRanks.Length ? upgradeRanks[index] : 0;
     }
     public bool TryUpgrade(PlayerUpgrade upgrade)
     {
         int index=(int)upgrade;
-        if(index<0||index>=UpgradeCount||AvailableUpgradePoints<=0||UpgradeRank(upgrade)>=MaximumUpgradeRank)return false;
+        if(index<0||index>=UpgradeCount||AvailableUpgradePoints<=0||UpgradeRank(upgrade)>=MaximumRank(upgrade))return false;
         var health=GetComponent<PlayerHealth>();if(health!=null&&!health.IsAlive)return false;
-        if(upgradeRanks==null||upgradeRanks.Length!=UpgradeCount)upgradeRanks=new int[UpgradeCount];
+        ResizeRanks();
         upgradeRanks[index]++;MarkDirty();Changed?.Invoke();return true;
     }
     private void MarkDirty()
@@ -71,8 +78,8 @@ public sealed class PlayerProgressionState : MonoBehaviour
     {
         if (string.IsNullOrWhiteSpace(saveKey)) saveKey = "TopDownShooter3D.Progression.v1";
         level = Mathf.Clamp(level, 1, MaximumLevel);
-        if(upgradeRanks==null||upgradeRanks.Length!=UpgradeCount)upgradeRanks=new int[UpgradeCount];
-        int spent=0;for(int i=0;i<UpgradeCount;i++){upgradeRanks[i]=Mathf.Clamp(upgradeRanks[i],0,MaximumUpgradeRank);spent+=upgradeRanks[i];}
+        ResizeRanks();
+        int spent=0;for(int i=0;i<UpgradeCount;i++){upgradeRanks[i]=Mathf.Clamp(upgradeRanks[i],0,MaximumRank((PlayerUpgrade)i));spent+=upgradeRanks[i];}
         if(spent>level-1)Array.Clear(upgradeRanks,0,UpgradeCount);
         experience = IsMaximumLevel ? 0 : Mathf.Clamp(experience, 0, ExperienceRequired - 1);
         if (persistProgress && PlayerPrefs.HasKey(saveKey)) RestoreSave(PlayerPrefs.GetString(saveKey));
@@ -92,20 +99,26 @@ public sealed class PlayerProgressionState : MonoBehaviour
         if (oldLevel != level) LeveledUp?.Invoke(oldLevel, level);
     }
 
-    public string CaptureSave() => JsonUtility.ToJson(new SaveData { version = 2, level = level, experience = experience, upgrades = (int[])upgradeRanks.Clone() });
+    private void ResizeRanks()
+    {
+        if(upgradeRanks==null)upgradeRanks=new int[UpgradeCount];
+        else if(upgradeRanks.Length!=UpgradeCount)Array.Resize(ref upgradeRanks,UpgradeCount);
+    }
+    public string CaptureSave() => JsonUtility.ToJson(new SaveData { version = 3, level = level, experience = experience, upgrades = (int[])upgradeRanks.Clone() });
 
     public bool RestoreSave(string json)
     {
         SaveData data;
         try { data = JsonUtility.FromJson<SaveData>(json); }
         catch (ArgumentException) { return false; }
-        if (data == null || (data.version != 1&&data.version != 2) || data.level < 1 || data.level > MaximumLevel || data.experience < 0 ||
+        if (data == null || (data.version != 1&&data.version != 2&&data.version != 3) || data.level < 1 || data.level > MaximumLevel || data.experience < 0 ||
             (data.level == MaximumLevel ? data.experience != 0 : data.experience >= ExperienceForLevel(data.level))) return false;
         int[] ranks=new int[UpgradeCount];
-        if(data.version==2)
+        if(data.version>=2)
         {
-            if(data.upgrades==null||data.upgrades.Length!=UpgradeCount)return false;
-            int spent=0;for(int i=0;i<UpgradeCount;i++){if(data.upgrades[i]<0||data.upgrades[i]>MaximumUpgradeRank)return false;spent+=data.upgrades[i];ranks[i]=data.upgrades[i];}
+            int count=data.version==2?5:UpgradeCount;
+            if(data.upgrades==null||data.upgrades.Length!=count)return false;
+            int spent=0;for(int i=0;i<count;i++){if(data.upgrades[i]<0||data.upgrades[i]>MaximumRank((PlayerUpgrade)i))return false;spent+=data.upgrades[i];ranks[i]=data.upgrades[i];}
             if(spent>data.level-1)return false;
         }
         level = data.level; experience = data.experience; upgradeRanks=ranks; saveDirty = false; saveAt = 0;

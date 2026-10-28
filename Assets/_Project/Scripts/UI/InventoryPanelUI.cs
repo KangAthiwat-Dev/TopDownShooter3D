@@ -24,6 +24,9 @@ public class InventoryPanelUI : MonoBehaviour
     private bool enabledMenuMap;
     private int selectedSlot = -1, lastToggleFrame = -1;
     private GameObject previousSelection;
+    private PlayerPotionUse potionUse;
+    private ItemDefinition displayedItem;
+    private string consumptionMessage;
     public bool IsOpen { get; private set; }
     public int SelectedSlot => selectedSlot;
     public string DetailTitle => detailName != null ? detailName.text : string.Empty;
@@ -40,6 +43,7 @@ public class InventoryPanelUI : MonoBehaviour
             if (equipment == null) equipment = inventory.GetComponent<PlayerMeleeEquipment>();
             if (playerInput == null) playerInput = inventory.GetComponent<PlayerInput>();
             if (playerHealth == null) playerHealth = inventory.GetComponent<PlayerHealth>();
+            potionUse = inventory.GetComponent<PlayerPotionUse>();
         }
         if (pauseController == null) pauseController = FindAnyObjectByType<GamePauseController>();
         menuMap = playerInput.actions.FindActionMap("Menus", true);
@@ -85,7 +89,7 @@ public class InventoryPanelUI : MonoBehaviour
     {
         if (IsOpen || !isActiveAndEnabled || !playerHealth.IsAlive || pauseController == null ||
             !pauseController.isActiveAndEnabled || pauseController.IsGameOver ||
-            (pauseController.Reasons & GamePauseReason.Upgrades) != 0) return false;
+            pauseController.IsPaused) return false;
         previousSelection = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
         pauseController.SetPaused(GamePauseReason.Inventory, true);
         IsOpen = true; window.SetActive(true); window.transform.SetAsLastSibling(); openButton.interactable = false;
@@ -120,11 +124,15 @@ public class InventoryPanelUI : MonoBehaviour
     public void SelectSlot(int index)
     {
         if (!IsOpen || index < 0 || index >= slots.Length) return;
-        selectedSlot = index; Refresh();
+        selectedSlot = index; consumptionMessage = null; Refresh();
     }
     private void SelectWeapon()
     {
         if (IsOpen && selectedSlot >= PlayerInventory.Capacity) equipment.TrySelectSlot(selectedSlot - PlayerInventory.Capacity);
+        else if (IsOpen && potionUse != null && displayedItem != null)
+        {
+            potionUse.TryUse(selectedSlot, displayedItem); consumptionMessage = potionUse.LastResult; Refresh();
+        }
     }
     private void Refresh()
     {
@@ -144,23 +152,29 @@ public class InventoryPanelUI : MonoBehaviour
                 i == selectedSlot, melee);
         }
         ItemDefinition selectedItem = inventory.GetItem(selectedSlot);
+        displayedItem = selectedItem;
         MeleeWeaponDefinition selectedWeapon = selectedSlot >= PlayerInventory.Capacity ? equipment.GetWeapon(selectedSlot - PlayerInventory.Capacity) : null;
         bool occupied = selectedItem != null || selectedWeapon != null;
         detailName.text = selectedItem != null ? selectedItem.DisplayName : selectedWeapon != null ? selectedWeapon.DisplayName : "Nothing here yet";
         detailType.text = selectedItem != null ? selectedItem.Category.ToString().ToUpperInvariant() : selectedWeapon != null ? "MELEE WEAPON" : "EMPTY SLOT";
         detailDescription.text = selectedItem != null ? selectedItem.Description : selectedWeapon != null ? selectedWeapon.Description :
             "Collect supplies or a melee weapon to view its details here.\n\nSupplies use slots 1-8. The last two slots hold melee weapons.";
-        detailStats.text = selectedItem != null ? $"QUANTITY   {inventory.GetQuantity(selectedSlot)} / {selectedItem.MaxStack}" :
+        detailStats.text = selectedItem != null ? $"QUANTITY   {inventory.GetQuantity(selectedSlot)} / {selectedItem.MaxStack}" + (string.IsNullOrEmpty(consumptionMessage) ? "" : "\n" + consumptionMessage) :
             selectedWeapon != null ? $"HIT RANGE   {selectedWeapon.HitRange:0.#} m\nDAMAGE      {(selectedWeapon.KillsInOneHit ? "ONE-HIT KILL" : selectedWeapon.Damage.ToString("0.#"))}\n\nDrawn automatically near enemies." : "";
         detailIcon.sprite = selectedItem != null ? selectedItem.Icon : selectedWeapon != null ? selectedWeapon.HudIcon : null;
         detailIcon.gameObject.SetActive(detailIcon.sprite != null);
         detailGlyph.gameObject.SetActive(detailIcon.sprite == null);
         detailGlyph.text = selectedItem != null ? Initial(selectedItem.DisplayName) : selectedWeapon != null ? "M" : "+";
-        selectWeaponButton.gameObject.SetActive(occupied && selectedWeapon != null);
+        bool consumable = selectedItem != null && selectedItem.Effect != PotionEffect.None && potionUse != null;
+        selectWeaponButton.gameObject.SetActive(occupied && (selectedWeapon != null || consumable));
         bool alreadySelected = selectedWeapon != null && equipment.SelectedSlotIndex == selectedSlot - PlayerInventory.Capacity;
         bool canSelect = selectedWeapon != null && equipment.CanSelectSlot(selectedSlot - PlayerInventory.Capacity);
         selectWeaponButton.interactable = canSelect && !alreadySelected;
         selectLabel.text = alreadySelected ? "CURRENT WEAPON" : canSelect ? "SELECT WEAPON" : "BUSY - FINISH CURRENT ACTION";
+        if (consumable)
+        {
+            selectWeaponButton.interactable = potionUse.CanUse(selectedItem, out string reason); selectLabel.text = reason;
+        }
     }
     private static string Initial(string name) => string.IsNullOrWhiteSpace(name) ? "?" : name.Substring(0, 1).ToUpperInvariant();
 }

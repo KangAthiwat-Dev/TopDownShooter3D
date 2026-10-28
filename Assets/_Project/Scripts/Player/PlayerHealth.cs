@@ -9,13 +9,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private PlayerMovement playerMovement;
     private float bonusHealth, damageReduction;
+    private float potionReduction, potionGuardUntil;
 
     public bool IsInvulnerable =>
         playerMovement != null &&
         playerMovement.IsShadowDashing;
 
     public float MaxHealth => maxHealth + bonusHealth;
-    public float DamageReduction => damageReduction;
+    public float DamageReduction => 1f - (1f - damageReduction) * (1f - (PotionGuardRemaining > 0 ? potionReduction : 0));
+    public float PotionGuardRemaining => Mathf.Max(0, potionGuardUntil - Time.time);
     public float CurrentHealth { get; private set; }
     public bool IsAlive => CurrentHealth > 0f;
     public bool IsDead => !IsAlive;
@@ -50,7 +52,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         CurrentHealth = Mathf.Max(
-            CurrentHealth - damage * (1f - damageReduction),
+            CurrentHealth - damage * (1f - DamageReduction),
             0f
         );
 
@@ -70,8 +72,29 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 
+    public bool TryHeal(float amount)
+    {
+        if (!IsAlive || amount <= 0 || CurrentHealth >= MaxHealth) return false;
+        CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount); HealthChanged?.Invoke(CurrentHealth, MaxHealth); return true;
+    }
+
+    // Environmental death deliberately bypasses armour, potions and shadow dash.
+    public void KillFromLava()
+    {
+        if (IsDead) return;
+        CurrentHealth = 0;
+        HealthChanged?.Invoke(CurrentHealth, MaxHealth);
+        Die();
+    }
+    public bool TryPotionGuard(float reduction, float duration)
+    {
+        if (!IsAlive || reduction <= 0 || duration <= 0 || PotionGuardRemaining > 0) return false;
+        potionReduction = Mathf.Clamp(reduction, 0, .75f); potionGuardUntil = Time.time + duration; return true;
+    }
+
     private void Die()
     {
+        potionGuardUntil = 0;
         Died?.Invoke();
         
         Debug.Log("Player died.");

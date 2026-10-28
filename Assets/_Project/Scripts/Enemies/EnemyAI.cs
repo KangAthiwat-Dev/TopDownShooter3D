@@ -13,6 +13,14 @@ public class EnemyAI : MonoBehaviour
     private static void ResetRegistry() => activeEnemies.Clear();
     [Header("Target")]
     [SerializeField] private Transform target;
+    private BossArenaZone combatArena;
+    public void JoinEncounter(BossArenaZone area, Transform player)
+    {
+        combatArena = area; huntCivilians = false; target = player; playerTarget = player;
+        if (player == null) return;
+        lastSeenPosition = player.position; lastSeenTime = Time.time;
+        EnterState(EnemyAwarenessState.Chase);
+    }
     [SerializeField] private bool huntCivilians = true;
     [SerializeField, Min(.05f)] private float civilianScanInterval = .35f;
     private Transform playerTarget;
@@ -210,12 +218,14 @@ public class EnemyAI : MonoBehaviour
 
     private bool MoveTo(Vector3 point, float speed, float stoppingDistance, bool force = false)
     {
+        if (combatArena != null) point = combatArena.ClampToArena(point, agent.radius + .5f);
         agent.speed = speed;
         agent.stoppingDistance = stoppingDistance;
         if (!force && hasDestination && Time.time < nextPathTime) return true;
         nextPathTime = Time.time + repathInterval;
         var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
         if (!NavMesh.SamplePosition(point, out NavMeshHit hit, 2f, filter) ||
+            combatArena != null && !combatArena.Contains(hit.position) ||
             !agent.CalculatePath(hit.position, navigationPath) || navigationPath.status != NavMeshPathStatus.PathComplete)
         {
             StopMoving();

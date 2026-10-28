@@ -12,8 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e29a3c4d6f84be9a0c2d5e6f7182930, type: 3}
   m_Name: TrainingClub
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeaponDefinition
+  weaponId: training_club
   displayName: Training Club
+  description: A close-range weapon. Carried on your back and drawn automatically
+    near an enemy.
   heldPrefab: {fileID: 100000, guid: a152d6f7092b4e1cb3f508192a4b5c63, type: 3}
+  hudIcon: {fileID: 0}
   damage: 30
   killsInOneHit: 1
   hitRange: 2.5

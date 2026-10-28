@@ -18,6 +18,7 @@ public class PlayerMeleeEquipment : MonoBehaviour
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
     private bool weaponsVisible;
+    private bool purchaseInProgress;
 
     public int SelectedSlotIndex { get; private set; } = -1;
     public int WeaponCount { get; private set; }
@@ -60,7 +61,7 @@ public class PlayerMeleeEquipment : MonoBehaviour
 
     public bool CanEquip(MeleeWeaponDefinition weapon)
     {
-        return isActiveAndEnabled && WeaponCount < Capacity &&
+        return !purchaseInProgress && isActiveAndEnabled && WeaponCount < Capacity &&
                weapon != null && weapon.HeldPrefab != null && weaponHand != null;
     }
 
@@ -89,6 +90,51 @@ public class PlayerMeleeEquipment : MonoBehaviour
         if (firstWeapon) WeaponChanged?.Invoke(CurrentWeapon);
         SlotsChanged?.Invoke();
         return true;
+    }
+
+    // Shop owns the stock reservation. Both equipment and currency are updated before events.
+    internal bool TryPurchase(MeleeWeaponDefinition weapon, int slot, int price, PlayerGoldWallet wallet)
+    {
+        if (purchaseInProgress || !isActiveAndEnabled || weapon == null || weapon.HeldPrefab == null ||
+            weaponHand == null || slot < 0 || slot >= Capacity || wallet == null || wallet.gameObject != gameObject ||
+            price <= 0 || wallet.Gold < price || (playerHealth != null && !playerHealth.IsAlive) ||
+            (meleeAttack != null && meleeAttack.IsAttacking) || (playerInteractor != null && playerInteractor.IsInteracting)) return false;
+        purchaseInProgress = true;
+        try
+        {
+            // Instantiate first so a missing/unusable visual cannot consume Gold or the old weapon.
+            GameObject visual = Instantiate(weapon.HeldPrefab, weaponBack);
+            GameObject previous = weaponVisuals[slot];
+            bool first = SelectedSlotIndex < 0;
+            if (weapons[slot] == null) WeaponCount++;
+            weapons[slot] = weapon; weaponVisuals[slot] = visual;
+            if (first) SelectedSlotIndex = slot;
+            ApplyWeaponPose(slot); visual.SetActive(weaponsVisible);
+            if (previous != null) { previous.SetActive(false); Destroy(previous); }
+            wallet.DebitPurchase(price);
+            wallet.Commit(); // One currency record also contains the resulting two melee slots.
+            if (SelectedSlotIndex == slot) WeaponChanged?.Invoke(CurrentWeapon);
+            SlotsChanged?.Invoke();
+            return true;
+        }
+        finally { purchaseInProgress = false; }
+    }
+
+    internal void RestoreLoadout(MeleeWeaponDefinition[] loadout, int selected)
+    {
+        if (purchaseInProgress || loadout == null || loadout.Length != Capacity || weaponHand == null) return;
+        for (int i = 0; i < Capacity; i++)
+        {
+            if (weaponVisuals[i] != null) { weaponVisuals[i].SetActive(false); Destroy(weaponVisuals[i]); }
+            weapons[i] = loadout[i];
+            weaponVisuals[i] = loadout[i] != null && loadout[i].HeldPrefab != null ? Instantiate(loadout[i].HeldPrefab, weaponBack) : null;
+            if (weaponVisuals[i] == null) weapons[i] = null;
+        }
+        WeaponCount = Array.FindAll(weapons, w => w != null).Length;
+        SelectedSlotIndex = selected >= 0 && selected < Capacity && weapons[selected] != null ? selected : Array.FindIndex(weapons, w => w != null);
+        IsDrawn = false; RefreshWeaponPoses();
+        foreach (var visual in weaponVisuals) if (visual != null) visual.SetActive(weaponsVisible);
+        WeaponChanged?.Invoke(CurrentWeapon); SlotsChanged?.Invoke();
     }
 
     public bool TrySelectSlot(int slotIndex)
@@ -128,7 +174,7 @@ public class PlayerMeleeEquipment : MonoBehaviour
     {
         for (int i = 0; i < Capacity; i++)
         {
-            if (weaponVisuals[i] != null) ApplyWeaponPose(i);
+            if (weaponVisuals[i] != null && weapons[i] != null) ApplyWeaponPose(i);
         }
     }
 

@@ -31,6 +31,9 @@ public sealed class EncounterCombatant : MonoBehaviour, IBossHealthSource
     }
 
     [SerializeField] private string displayName;
+    [SerializeField] private bool showBossHud = true;
+    public bool UsesBossHud => showBossHud;
+    public void ConfigureArena(BossArenaZone value, bool bossHud) { arena = value; showBossHud = bossHud; }
     [SerializeField] private BossArenaZone arena;
     [SerializeField] private Animator animator;
     [SerializeField] private string openingAnimation;
@@ -69,7 +72,7 @@ public sealed class EncounterCombatant : MonoBehaviour, IBossHealthSource
     public bool IsEngaged => State == EncounterState.Chase || State == EncounterState.Casting || State == EncounterState.Recovery;
     public bool CanEmitSkillEffects => isActiveAndEnabled && State == EncounterState.Casting && health.IsAlive &&
         arena != null && arena.PlayerInside && arena.Player != null && arena.Player.IsAlive;
-    public bool ShowHealthBar => isActiveAndEnabled && arena != null && arena.PlayerInside &&
+    public bool ShowHealthBar => showBossHud && isActiveAndEnabled && arena != null && arena.PlayerInside &&
         (IsEngaged || State == EncounterState.Dead && Time.time - deathTime < deathHudHold);
     public event Action<Skill> SkillStarted;
     public event Action MeleeHit;
@@ -196,6 +199,17 @@ public sealed class EncounterCombatant : MonoBehaviour, IBossHealthSource
         State = EncounterState.Returning; current = -1; SetTargetable(false); StopMoving(); nextPath = 0;
         effects?.CancelCombatEffects(false);
         animator.CrossFadeInFixedTime("Locomotion", .1f, 0, 0);
+    }
+    public void ResetEncounter()
+    {
+        if (health == null) return;
+        StopMoving(); effects?.CancelCombatEffects(true);
+        if (body != null) body.enabled = true;
+        if (AgentReady) agent.Warp(home); else transform.position = home;
+        transform.rotation = homeRotation; health.RestoreToFullHealth();
+        current = -1; nextSkill = 0; State = EncounterState.Dormant;
+        Array.Clear(ready, 0, ready.Length); SetTargetable(false);
+        animator.Rebind(); animator.Update(0); animator.Play("Locomotion", 0, 0);
     }
     private void UpdateReturn()
     {

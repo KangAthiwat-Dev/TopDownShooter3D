@@ -18,6 +18,11 @@ Prefab และ controller อยู่ใน `Assets/_Project/NPCs/CityService
 
 `CityServiceNpc` เก็บ Role, Building และ InteractionPoint ไว้ให้เชื่อมต่อในขั้นต่อไป ตัว NPC มี `Service_Interaction_Point` เป็นจุดยืนของผู้เล่นด้านหน้า
 
-งานรอบนี้เป็นการวาง NPC และพฤติกรรมต้อนรับ ระบบซื้อ potion, ขายไอเทมให้กิลด์ และเมนูเซฟผ่าน Hotel ยังไม่ได้เชื่อมกับปุ่ม Interact หรือเศรษฐกิจของเกม ส่วนระบบ EXP เดิมบันทึกอัตโนมัติแยกอยู่แล้ว
+เดิมเป็นการวาง NPC และพฤติกรรมต้อนรับ ต่อมาระบบขายไอเทมที่กิลด์และร้าน Potion เชื่อมกับปุ่ม E และ Gold แล้ว ดู [POTION_SHOP_AND_USE.md](POTION_SHOP_AND_USE.md) ส่วนเมนูเซฟผ่าน Hotel ยังไม่ได้เชื่อม ระบบ EXP เดิมบันทึกอัตโนมัติแยกอยู่แล้ว
 
 ตรวจตำแหน่ง/rig/ช่องทางเดินและภาพได้จาก `Logs/CityServiceNpcPlacement.txt` และ `Logs/CityServices_*.png` รายงาน `Logs/CityServiceNpcScope.txt` เทียบองค์ประกอบเดิม 6,717 คอมโพเนนต์ พร้อมตำแหน่งและ parent เดิมระหว่างเพิ่ม NPC
+
+## ระบบขายของที่ Gild
+
+NPC GuildBuyer เชื่อมบทสนทนากด E และใช้เมาส์ขายวัตถุดิบมอนสเตอร์รับ Gold แล้ว
+ดู [GUILD_SELLING_AND_GOLD.md](GUILD_SELLING_AND_GOLD.md) สำหรับราคา พฤติกรรม และจุดต่อร้านค้าในอนาคต

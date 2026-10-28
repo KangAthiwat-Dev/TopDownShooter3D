@@ -1,0 +1,13 @@
+POLYCLEM MAGIC PROPS LICENSE
+Rights holder: PolyClem.
+
+APPLICABLE TERMS
+For direct downloads, including itch.io, the direct-download terms below apply. For downloads from a marketplace that specifies its own product license, the license selected on that marketplace governs that download instead; the direct-download terms below do not add restrictions to or expand that marketplace license. On ArtStation this release uses the Extended Commercial License for Stock Assets.
+
+DIRECT-DOWNLOAD TERMS
+You may use, copy, modify and integrate these assets in any number of personal and commercial projects, including games, applications, films, images and client work, without royalties. You may distribute finished projects incorporating the assets. Normal inclusion in a compiled game or application is allowed.
+You may share source assets privately with collaborators or contractors solely for your project. A client may receive source assets as part of that client's project. Recipients must follow these terms and may not reuse or distribute the assets independently.
+You may not resell, give away, rehost, sublicense or redistribute the raw assets, including modified versions, as standalone assets, an asset library, or a template whose primary value is access to the reusable assets. Do not claim exclusive ownership of the supplied assets or imply endorsement by PolyClem.
+Credit to PolyClem is optional. Ownership is not transferred.
+To the extent permitted by applicable law, the assets are provided as-is without additional warranties. These terms do not exclude rights or responsibilities that cannot lawfully be excluded.
+For other permissions or support, contact PolyClem through the original download page.

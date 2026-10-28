@@ -18,6 +18,9 @@ public sealed class PlayerUpgradePanelUI : MonoBehaviour
     [SerializeField] private TMP_Text openLabel,pointsLabel,summary;
     [SerializeField] private Button[] upgradeButtons;
     [SerializeField] private TMP_Text[] rankLabels,previews;
+    [SerializeField] private Button basicsTab,combatTab;
+    [SerializeField] private GameObject[] cards;
+    private bool combatPage=true;
     private InputAction toggle,close;
     private InputActionMap menuMap;
     private bool enabledMap;
@@ -31,6 +34,8 @@ public sealed class PlayerUpgradePanelUI : MonoBehaviour
         toggle=menuMap.FindAction("Upgrades",true);close=menuMap.FindAction("Close",true);
         openButton.onClick.AddListener(Toggle);closeButton.onClick.AddListener(Close);
         for(int i=0;i<upgradeButtons.Length;i++){int index=i;upgradeButtons[i].onClick.AddListener(()=>Spend((PlayerUpgrade)index));}
+        if(basicsTab!=null)basicsTab.onClick.AddListener(()=>ShowPage(false));
+        if(combatTab!=null)combatTab.onClick.AddListener(()=>ShowPage(true));
         window.SetActive(false);
     }
     private void OnEnable()
@@ -51,9 +56,10 @@ public sealed class PlayerUpgradePanelUI : MonoBehaviour
     public void Toggle(){if(IsOpen)Close();else TryOpen();}
     public bool TryOpen()
     {
-        if(IsOpen||!isActiveAndEnabled||!health.IsAlive||pause==null||!pause.isActiveAndEnabled||pause.IsGameOver||(inventory!=null&&inventory.IsOpen))return false;
+        if(IsOpen||!isActiveAndEnabled||!health.IsAlive||pause==null||!pause.isActiveAndEnabled||pause.IsGameOver||
+            pause.IsPaused||(inventory!=null&&inventory.IsOpen))return false;
         previousSelection=EventSystem.current!=null?EventSystem.current.currentSelectedGameObject:null;
-        pause.SetPaused(GamePauseReason.Upgrades,true);IsOpen=true;window.SetActive(true);window.transform.SetAsLastSibling();openButton.interactable=false;Refresh();
+        pause.SetPaused(GamePauseReason.Upgrades,true);IsOpen=true;window.SetActive(true);transform.SetAsLastSibling();window.transform.SetAsLastSibling();openButton.interactable=false;Refresh();
         if(EventSystem.current!=null)EventSystem.current.SetSelectedGameObject(closeButton.gameObject);
         return true;
     }
@@ -66,20 +72,32 @@ public sealed class PlayerUpgradePanelUI : MonoBehaviour
         if(EventSystem.current!=null)EventSystem.current.SetSelectedGameObject(previousSelection!=null&&previousSelection.activeInHierarchy?previousSelection:null);
     }
     public bool Spend(PlayerUpgrade kind)=>IsOpen&&progression.TryUpgrade(kind);
+    public void ShowPage(bool combat)
+    {
+        combatPage=combat;
+        if(cards!=null)for(int i=0;i<cards.Length;i++)
+        {
+            bool basic=i==(int)PlayerUpgrade.Endurance||i==(int)PlayerUpgrade.Transformation||i==(int)PlayerUpgrade.Firepower;
+            if(cards[i]!=null)cards[i].SetActive(combat?!basic:basic);
+        }
+        if(basicsTab!=null)basicsTab.interactable=combat;if(combatTab!=null)combatTab.interactable=!combat;
+    }
     private void Refresh()
     {
         int available=progression.AvailableUpgradePoints;
-        openLabel.text="[C]  UPGRADES"+(available>0?"   +"+available:"");
-        pointsLabel.text="LEVEL "+progression.Level+"   /   "+available+" UPGRADE POINT"+(available==1?"":"S");
+        openLabel.text="[C]  พัฒนาสกิล"+(available>0?"   +"+available:"");
+        pointsLabel.text="เลเวล "+progression.Level+"  |  แต้มคงเหลือ "+available;
         if(!IsOpen)return;
+        ShowPage(combatPage);
         for(int i=0;i<upgradeButtons.Length;i++)
         {
             int rank=progression.UpgradeRank((PlayerUpgrade)i);
-            rankLabels[i].text=rank+" / "+PlayerProgressionState.MaximumUpgradeRank;
-            previews[i].text=rank>=PlayerProgressionState.MaximumUpgradeRank?"MAXIMUM RANK":stats.Preview((PlayerUpgrade)i);
-            upgradeButtons[i].interactable=available>0&&rank<PlayerProgressionState.MaximumUpgradeRank;
+            int cap=PlayerProgressionState.MaximumRank((PlayerUpgrade)i);
+            rankLabels[i].text=rank+" / "+cap;
+            previews[i].text=rank>=cap?"พัฒนาถึงขั้นสูงสุดแล้ว":stats.Preview((PlayerUpgrade)i);
+            upgradeButtons[i].interactable=available>0&&rank<cap;
         }
         var energy=progression.GetComponent<PlayerEnergy>();var weapon=progression.GetComponent<PlayerRangedWeapon>();
-        summary.text=$"HEALTH  {health.MaxHealth:0}       ENERGY  {energy.MaxEnergy:0}       DAMAGE  {weapon.Damage:0.#}       3-ROUND BURST";
+        summary.text=$"เลือด {health.MaxHealth:0}   |   พลังงาน {energy.MaxEnergy:0}   |   ดาเมจกระสุนหลัก {weapon.Damage:0.#}   |   ยิงชุดละ 3 จังหวะ";
     }
 }

@@ -30,6 +30,10 @@ public class PlayerRangedWeapon : MonoBehaviour
     private PlayerCombatFacing combatFacing;
     private PlayerAnimationController animationController;
     private Targetable pendingTarget;
+    [Header("Skill Projectiles")]
+    [SerializeField] private Projectile piercingProjectile;
+    [SerializeField] private Projectile explosiveProjectile;
+    private PlayerCombatSkills skills;
 
     public Transform MuzzlePoint => muzzlePoint;
     public float BaseDamage => damage;
@@ -37,6 +41,7 @@ public class PlayerRangedWeapon : MonoBehaviour
     public float DamageMultiplier { get; set; } = 1f;
     public Targetable PendingTarget => pendingTarget;
     public event Action<Projectile> ProjectileFired;
+    public event Action<Projectile> ProjectileSpawned;
 
     private void Awake()
     {
@@ -47,6 +52,7 @@ public class PlayerRangedWeapon : MonoBehaviour
         }
         combatFacing = GetComponent<PlayerCombatFacing>();
         animationController = GetComponent<PlayerAnimationController>();
+        skills = GetComponent<PlayerCombatSkills>();
     }
 
     private void OnEnable()
@@ -101,10 +107,22 @@ public class PlayerRangedWeapon : MonoBehaviour
         // Capture the FINAL barrel pose. Never steer this projectile towards a
         // target or overwrite its direction with a separate auto-aim vector.
         Vector3 direction = muzzlePoint.forward;
-        Projectile projectile = Instantiate(projectilePrefab, muzzlePoint.position,
-            Quaternion.LookRotation(direction, muzzlePoint.up));
-        projectile.Initialize(direction, projectileSpeed, Damage, gameObject);
+        int count=skills!=null?skills.ProjectilesPerVolley:1;
+        int middle=count/2;
+        Projectile center=null;
+        var prefab=skills!=null&&skills.BlastRadius>0&&explosiveProjectile!=null?explosiveProjectile:
+            skills!=null&&skills.ExtraPierceTargets>0&&piercingProjectile!=null?piercingProjectile:projectilePrefab;
+        for(int i=0;i<count;i++)
+        {
+            // Spread rotates the final barrel pose. Projectiles never seek a target.
+            Vector3 spread=Quaternion.AngleAxis((i-middle)*(skills!=null?skills.SpreadDegrees:0),Vector3.up)*direction;
+            Projectile projectile=Instantiate(prefab,muzzlePoint.position,Quaternion.LookRotation(spread,muzzlePoint.up));
+            projectile.Initialize(spread,projectileSpeed,Damage*(i==middle||skills==null?1:skills.SideBulletDamage),gameObject);
+            if(skills!=null)projectile.ConfigureSkills(skills,skills.ExtraPierceTargets,skills.BlastRadius,skills.BlastDamageRatio,skills.HitSettings);
+            ProjectileSpawned?.Invoke(projectile);if(i==middle)center=projectile;
+        }
         attackController.ConfirmRangedShot(shotTarget);
-        ProjectileFired?.Invoke(projectile);
+        // Cadence, muzzle/audio and tutorial still receive one event per volley.
+        ProjectileFired?.Invoke(center);
     }
 }
